@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import connectDB from "./utils/db.js";
+import userRouter from './routes/user.routes.js';
 
 dotenv.config({});
 
@@ -20,6 +21,8 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use("/api/users" , userRouter);
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
