@@ -6,12 +6,13 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import connectDB from "./utils/db.js";
 import userRouter from './routes/user.routes.js';
+import connectToSocket from "./controller/socketManager.js"
 
 dotenv.config({});
 
 let app = express();
 let server = createServer(app);
-let io = new Server(server);
+let io = connectToSocket(server);
 let port = process.env.PORT || 8080;
 
 app.use(cors({
