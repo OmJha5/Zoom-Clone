@@ -7,7 +7,7 @@ let register = async(req , res) => {
         let {name , username , password} = req.body;
         
         if(!name || !username || !password){
-            return res.json({
+            return res.status(400).json({
                 message: "Please fill all the fields",
                 success: false
             });
@@ -15,7 +15,7 @@ let register = async(req , res) => {
 
         let existingUser = await User.findOne({ username });
         if(existingUser){   
-            return res.json({
+            return res.status(400).json({
                 message: "User already exists",
                 success: false
             });
@@ -31,6 +31,7 @@ let register = async(req , res) => {
         let tokenData = {
             username : user.username,
             name : user.name,
+            id : user._id
         }
 
         const token = jwt.sign(tokenData, process.env.SECRET_KEY, { expiresIn: '7d' });
@@ -42,7 +43,7 @@ let register = async(req , res) => {
         })
     }
     catch(e){
-        return res.json({
+        return res.status(400).json({
             message : "Internal Server Error",
             success : false
         })
@@ -54,7 +55,7 @@ let login = async(req , res) => {
         let {username , password} = req.body;
 
         if(!username || !password){
-            return res.json({
+            return res.status(400).json({
                 message: "Please fill all the fields",
                 success: false
             });
@@ -62,7 +63,7 @@ let login = async(req , res) => {
 
         let user = await User.findOne({ username });
         if(!user){
-            return res.json({
+            return res.status(400).json({
                 message: "User does not exist",
                 success: false
             });
@@ -70,7 +71,7 @@ let login = async(req , res) => {
 
         let isPasswordValid = await bcrypt.compare(password, user.password);
         if(!isPasswordValid){
-            return res.json({
+            return res.status(400).json({
                 message: "Invalid credentials",
                 success: false
             });
@@ -79,6 +80,7 @@ let login = async(req , res) => {
         let tokenData = {
             username : user.username,
             name : user.name,
+            id : user._id
         }
 
         const token = jwt.sign(tokenData, process.env.SECRET_KEY, { expiresIn: '7d' });
@@ -90,11 +92,47 @@ let login = async(req , res) => {
         })
     }
     catch(e){
-        return res.json({
+        return res.status(400).json({
             message : "Internal Server Error",
             success : false
         })
     }
 };
 
-export {register, login};
+let checkUser = async(req , res) => {
+    try{
+        let token = req?.cookies?.zoomToken
+
+        if(!token){
+            return res.status(401).json({
+                message : "User not Authenticated!",
+                success : false
+            })
+        }
+
+        const decode =  jwt.verify(token , process.env.SECRET_KEY)
+        if(!decode){
+            return res.status(401).json({
+                message : "Invalid Token",
+                success : false
+            })
+        }
+
+        let id = decode.id;
+        let user = await User.findById(id);
+
+        return res.status(200).json({
+            user,
+            success : true
+        })
+    }
+    catch(e){
+        console.log(e);
+        return res.status(400).json({
+            message : "Internal Server Error",
+            success : false
+        })
+    }
+}
+
+export {register, login , checkUser};

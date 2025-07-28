@@ -7,6 +7,7 @@ import cors from 'cors';
 import connectDB from "./utils/db.js";
 import userRouter from './routes/user.routes.js';
 import connectToSocket from "./controller/socketManager.js"
+import cookieParser from 'cookie-parser';
 
 dotenv.config({});
 
@@ -15,8 +16,10 @@ let server = createServer(app);
 let io = connectToSocket(server);
 let port = process.env.PORT || 8080;
 
+app.use(cookieParser());
+
 app.use(cors({
-    origin : "http://localhost:5143",
+    origin : "http://localhost:5173",
     credentials: true
 }))
 

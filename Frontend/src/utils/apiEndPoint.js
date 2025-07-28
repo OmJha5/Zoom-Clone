@@ -1,0 +1,1 @@
+export let USER_ENDPOINT_API = "http://localhost:8080/api/users";

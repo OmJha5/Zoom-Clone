@@ -31,7 +31,7 @@ export default function Landing_Page() {
             <p className='mainP'>Join a video call with your friends and family, no matter where they are.</p>
 
             <div role="button">
-                <Link to={"/auth"}>Get Started</Link>
+                <Link to={"/home"}>Get Started</Link>
             </div>
         </div>
 
