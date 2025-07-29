@@ -3,6 +3,7 @@ import {createBrowserRouter , RouterProvider} from 'react-router-dom';
 import Landing_Page from './pages/Landing_Page';
 import Authentication from './pages/Authentication';
 import HomePage from './pages/HomePage';
+import VideoMeet from './pages/VideoMeet';
 
 let appRouter = createBrowserRouter([
   {
@@ -16,7 +17,11 @@ let appRouter = createBrowserRouter([
   {
     path : "/home",
     element : <HomePage/>
-  }
+  },
+  {
+    path : "/:url",
+    element : <VideoMeet/>
+  },
 ])
 
 export default function App() {
