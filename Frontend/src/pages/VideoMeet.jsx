@@ -36,7 +36,7 @@ export default function VideoMeetComponent() {
     let [audio, setAudio] = useState();
     let [screen, setScreen] = useState();
     let [showModal, setModal] = useState(true);
-    let [screenAvailable, setScreenAvailable] = useState();
+    let [screenAvailable, setScreenAvailable] = useState(true);
     let [messages, setMessages] = useState([])
     let [message, setMessage] = useState("");
     let [newMessages, setNewMessages] = useState(3);
@@ -50,6 +50,11 @@ export default function VideoMeetComponent() {
             let permission = async () => {
                 await getPermissionsForAudio();
                 await getPermissionsForVideo();
+
+                if (navigator.mediaDevices.getDisplayMedia) { // that means user device can share the screen
+                    setScreenAvailable(true);
+                }
+                else setScreenAvailable(false);
             }
 
             permission();
@@ -102,7 +107,6 @@ export default function VideoMeetComponent() {
         setVideo(videoAvailable);
         setAudio(audioAvailable);
         connectToSocketServer();
-
     }
 
 
@@ -317,6 +321,76 @@ export default function VideoMeetComponent() {
         getMedia();
     }
 
+    /*
+    "In WebRTC, once users are connected, their video or audio flows live without needing to send anything again. If the user’s stream stays the same — like just changing the webcam content — it keeps working.
+    But if the user adds a new stream (like screen sharing) or removes one, we need to inform the other person by creating a new offer. That’s called renegotiation."
+    */
+    let getDisplayMediaSucess = async (stream) => {
+        try {
+            window.localStream.getTracks().forEach(track => track.stop())
+        }
+        catch (e) { console.log(e) }
+
+        window.localStream = stream
+        localVideoref.current.srcObject = stream
+
+        for (let id in connections) {
+            if (id === socketIdRef.current) continue
+
+            connections[id].addStream(window.localStream)
+
+            connections[id].createOffer().then((description) => {
+                connections[id].setLocalDescription(description)
+                    .then(() => {
+                        socketRef.current.emit('signal', id, JSON.stringify({ 'sdp': connections[id].localDescription }))
+                    })
+                    .catch(e => console.log(e))
+            })
+        }
+
+        stream.getTracks().forEach(track => track.onended = () => { // it is checking if any track is ended if yes means user ne screen share band kar diya hai 
+            setScreen(false)
+
+            try {
+                let tracks = localVideoref.current.srcObject.getTracks()
+                tracks.forEach(track => track.stop())
+            } catch (e) { console.log(e) }
+
+            getUserMedia()
+
+        })
+    }
+
+    let getDisplayMedia = async () => {
+        try {
+            if (screen) {
+                navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }) // video means you are sharing your screen and audio means your systam audio inka eak stream
+                    .then(getDisplayMediaSucess)
+                    .catch(e);
+            }
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+
+    useEffect(() => {
+        if (screen != undefined) {
+            getDisplayMedia();
+        }
+    }, [screen])
+
+    let handleScreen = () => {
+        if (screenAvailable == false) {
+            toast.error("Your device can not share the screen");
+        }
+
+        if (screenAvailable == undefined) {
+            setScreen(true);
+        }
+        else setScreen(!screen);
+    }
+
 
     return (
         <div>
@@ -354,17 +428,22 @@ export default function VideoMeetComponent() {
 
                         {screenAvailable === true ?
                             <IconButton style={{ color: "white" }}>
-                                {screen === true ? <ScreenShareIcon /> : <StopScreenShareIcon />}
+                                {screen === true ? <ScreenShareIcon onClick={handleScreen} /> : <StopScreenShareIcon onClick={handleScreen} />}
                             </IconButton> : <></>}
+
+                        <Badge badgeContent={newMessages} max={999} color='secondary'>
+                            <IconButton onClick={() => setModal(!showModal)} style={{ color: "white" }}>
+                                <ChatIcon />                        </IconButton>
+                        </Badge>
 
                     </div>
 
 
                     <video className="meetUserVideo" ref={localVideoref} autoPlay></video>
 
-                    <div className="singleVideo">
+                    <div className="videoDiv">
                         {videos.map((video) => (
-                            <div key={video.socketId}>
+                            <div key={video.socketId} className='singleVideo'>
                                 <video
 
                                     data-socket={video.socketId}

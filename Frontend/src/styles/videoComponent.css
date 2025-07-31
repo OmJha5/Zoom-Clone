@@ -16,16 +16,23 @@
 .buttonContainer {
     position: absolute;
     width: 100vw;
-    bottom: 0;
+    bottom: 10px;
     text-align: center;
 }
 
 .buttonContainer svg {
-    font-size: 2.5rem;
+    font-size: 2rem;
+    margin-right: 10px;
 }
 
-.singleVideo { 
-    display: flex;
+.videoDiv { 
+    display: row;
     padding: 10px;
-    gap: 10px;
+    gap : 10px;
+}
+
+.singleVideo > video{
+    width: 40vw;
+    min-width: 30vw;
+    border-radius: 15px;
 }
