@@ -12,6 +12,9 @@ import ScreenShareIcon from '@mui/icons-material/ScreenShare';
 import StopScreenShareIcon from '@mui/icons-material/StopScreenShare'
 import ChatIcon from '@mui/icons-material/Chat'
 import toast from 'react-hot-toast';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import useCheckUser from "../hooks/useCheckUser.jsx"
 
 const server_url = "http://localhost:8080";
 
@@ -24,6 +27,10 @@ const peerConfigConnections = {
 }
 
 export default function VideoMeetComponent() {
+    let dispatch = useDispatch();
+    let navigate = useNavigate();
+
+    const user = useSelector((state) => state.auth.username);
 
     var socketRef = useRef();
     let socketIdRef = useRef();
@@ -39,11 +46,13 @@ export default function VideoMeetComponent() {
     let [screenAvailable, setScreenAvailable] = useState(true);
     let [messages, setMessages] = useState([])
     let [message, setMessage] = useState("");
-    let [newMessages, setNewMessages] = useState(3);
+    let [newMessages, setNewMessages] = useState(0);
     let [askForUsername, setAskForUsername] = useState(true);
-    let [username, setUsername] = useState("");
 
     let [videos, setVideos] = useState([])
+    let [username, setUsername] = useState("");
+
+    useCheckUser();
 
     useEffect(() => {
         if (setAskForUsername) {
@@ -176,8 +185,14 @@ export default function VideoMeetComponent() {
         }
     }
 
-    let addMessage = () => {
+    let addMessage = (data, sender, socketId) => {
+        let newMessage = { data, sender };
 
+        setMessages(prevMessages => [...prevMessages, newMessage]);
+
+        if (socketRef.current != socketId) {
+            setNewMessages(prev => prev + 1);
+        }
     }
 
     let connectToSocketServer = () => {
@@ -326,6 +341,7 @@ export default function VideoMeetComponent() {
     But if the user adds a new stream (like screen sharing) or removes one, we need to inform the other person by creating a new offer. That’s called renegotiation."
     */
     let getDisplayMediaSucess = async (stream) => {
+        console.log("Started");
         try {
             window.localStream.getTracks().forEach(track => track.stop())
         }
@@ -349,6 +365,7 @@ export default function VideoMeetComponent() {
         }
 
         stream.getTracks().forEach(track => track.onended = () => { // it is checking if any track is ended if yes means user ne screen share band kar diya hai 
+            console.log("Finised")
             setScreen(false)
 
             try {
@@ -366,7 +383,9 @@ export default function VideoMeetComponent() {
             if (screen) {
                 navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }) // video means you are sharing your screen and audio means your systam audio inka eak stream
                     .then(getDisplayMediaSucess)
-                    .catch(e);
+                    .catch(() => { // when user ne kon si screen shose karni hai uss prompt ko nhi diya then yeh .catch chalega
+                        setScreen(false);
+                    })
             }
         }
         catch (e) {
@@ -391,6 +410,11 @@ export default function VideoMeetComponent() {
         else setScreen(!screen);
     }
 
+    let sendMessage = () => {
+        socketRef.current.emit("chat-message", message, user);
+        setMessage("");
+    }
+
 
     return (
         <div>
@@ -401,7 +425,7 @@ export default function VideoMeetComponent() {
 
 
                     <h2>Enter into Lobby </h2>
-                    <TextField id="outlined-basic" label="Username" value={username} onChange={e => setUsername(e.target.value)} variant="outlined" />
+                    <TextField id="outlined-basic" label="Username" value={username} onChange={(e) => setUsername(e.target.value)} variant="outlined" />
                     <Button variant="contained" onClick={connect}>Connect</Button>
 
 
@@ -460,6 +484,33 @@ export default function VideoMeetComponent() {
                         ))}
 
                     </div>
+
+                    {showModal && (
+                        <div className="chatRoom">
+                            <div className="chatContainer">
+                                <h1>Chat</h1>
+
+                                <div className="chatDisplay">
+                                    {
+                                        messages.map((elm, ind) => {
+                                            return (
+                                                <div key={ind} style={{ padding: "5px" }}>
+                                                    <p style={{ fontStyle: "bold" }}>{elm.sender}</p>
+                                                    <p>{elm.data}</p>
+                                                </div>
+                                            )
+                                        })
+                                    }
+                                </div>
+
+                                <div className="chattingArea">
+                                    <TextField id="outlined-basic" value={message} onChange={(e) => setMessage(e.target.value)} label="Enter your message" variant="outlined" />
+                                    <Button variant="contained" onClick={sendMessage}>Send</Button>
+                                </div>
+                            </div>
+
+                        </div>
+                    )}
 
                 </div>
 

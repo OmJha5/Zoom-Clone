@@ -1,7 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Balsamiq+Sans&display=swap');
+
 .meetVideoContainer {
     position: relative;
     height: 100vh;
     background: rgb(1, 4, 48);
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
 }
 
 .meetUserVideo {
@@ -35,4 +38,26 @@
     width: 40vw;
     min-width: 30vw;
     border-radius: 15px;
+}
+
+.chatRoom{
+    height: 90vh;
+    position: absolute;
+    right: 0;
+    background-color: white;
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+    width: 25vw;
+    padding-inline : 20px;
+}
+
+.chatContainer{
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.chattingArea{
+    position: absolute;
+    bottom: 10px;
 }
