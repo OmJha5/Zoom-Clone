@@ -156,8 +156,8 @@ export default function VideoMeetComponent() {
                 connections[fromId].setRemoteDescription(new RTCSessionDescription(signal.sdp)).then(() => {
                     if (signal.sdp.type === 'offer') {
 
-                        connections[fromId].createAnswer().then((description) => {
-                            connections[fromId].setLocalDescription(description).then(() => {
+                        connections[fromId].createAnswer().then((description) => { // It now sends their media capabilites to the client from where this offer came
+                            connections[fromId].setLocalDescription(description).then(() => { // localdescription set means now it will send their ICE candidate its own ip and port to the client from where this offer came and after that a network path will be estabilished.
                                 socketRef.current.emit('signal', fromId, JSON.stringify({ 'sdp': connections[fromId].localDescription }))
                             }).catch(e => console.log(e))
                         }).catch(e => console.log(e))
@@ -192,9 +192,12 @@ export default function VideoMeetComponent() {
             })
 
             socketRef.current.on('user-joined', (id, clients) => {
+
                 clients.forEach((socketListId) => {
 
                     if (socketIdRef.current == socketListId) return;
+
+                    if (connections[socketListId]) return; // if yes then current browser client already has connection with this socket if yes then agar handshake hogaya hai to phir se kyu karen that is the concept. they are already in a single room
 
                     // Create a WebRTC connection with settings in peerConfigConnections and store it using the other user’s ID.”
                     connections[socketListId] = new RTCPeerConnection(peerConfigConnections)
@@ -239,20 +242,26 @@ export default function VideoMeetComponent() {
                     };
 
 
-                    // New user just creates the offer , streams and send it to the old user 
-                    // Old user in return just added their stream to new user as initial setup so that connection can be estabished 
-                    // And in this case Old user don't have to create any offer because that is being done from old user
-                    // Once connection is estabilished then which ever client has to send stream then it only negotiates with new stream and offer rest clients will just answer their offer.
-                    if (window.localStream !== undefined && window.localStream !== null) {
-                        connections[socketListId].addStream(window.localStream)
-                    } 
-                    else {
-                        let blackSilence = (...args) => new MediaStream([black(...args), silence()]) // It will silent media stream because in intial setup if no stream then still we have to add it
-                        window.localStream = blackSilence()
-                        connections[socketListId].addStream(window.localStream)
+                    if (id == socketListId) { // so that new user do not send intial stream to the old user because that will ultimately happen after this
+                        // New user just creates the offer , streams and send it to the old user 
+                        // Old user in return just added their stream to new user as initial setup so that connection can be estabished 
+                        // And in this case Old user don't have to create any offer because that is being done from old user
+                        // Once connection is estabilished then which ever client has to send stream then it only negotiates with new stream and offer rest clients will just answer their offer.
+                        if (window.localStream !== undefined && window.localStream !== null) {
+                            connections[socketListId].addStream(window.localStream)
+                        }
+                        else {
+                            let blackSilence = (...args) => new MediaStream([black(...args), silence()]) // It will silent media stream because in intial setup if no stream then still we have to add it
+                            window.localStream = blackSilence()
+                            connections[socketListId].addStream(window.localStream)
+                        }
                     }
                 })
 
+                // Signaling(Our own nodejs server it is just a message exchange part) is the process of exchanging metadata between two peers so they can establish a peer-to-peer connection.
+                // It includes the exchange of:
+                // SDP (Session Description Protocol) — describes media capabilities
+                // ICE candidates — describes how to reach each other (IP, port, protocols)
                 if (id === socketIdRef.current) {
                     for (let id2 in connections) {
                         if (id2 === socketIdRef.current) continue
@@ -290,14 +299,14 @@ export default function VideoMeetComponent() {
     }
 
     let handleVideo = () => {
-        if(videoAvailable == true){
+        if (videoAvailable == true) {
             setVideo(!video);
         }
         else toast.error("You can not turn on video because you have blocked the access");
     }
 
     let handleAudio = () => {
-        if(audioAvailable == true){
+        if (audioAvailable == true) {
             setAudio(!audio);
         }
         else toast.error("You can not turn on audio because you have blocked the access");
@@ -344,7 +353,7 @@ export default function VideoMeetComponent() {
                         </IconButton>
 
                         {screenAvailable === true ?
-                            <IconButton  style={{ color: "white" }}>
+                            <IconButton style={{ color: "white" }}>
                                 {screen === true ? <ScreenShareIcon /> : <StopScreenShareIcon />}
                             </IconButton> : <></>}
 
