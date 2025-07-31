@@ -7,7 +7,7 @@ import { Toaster } from 'react-hot-toast'
 import store from './redux/store.js'
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
+  <>
     <>
       <Provider store={store}>
         <App />
@@ -15,5 +15,5 @@ createRoot(document.getElementById('root')).render(
       </Provider>
 
     </>
-  </StrictMode>
+  </>
 )
