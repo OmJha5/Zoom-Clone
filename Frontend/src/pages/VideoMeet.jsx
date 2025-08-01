@@ -53,6 +53,12 @@ export default function VideoMeetComponent() {
     let [videos, setVideos] = useState([])
     let [username, setUsername] = useState("");
 
+    const modalOpenRef = useRef(false);
+
+    useEffect(() => {
+        modalOpenRef.current = showModal;
+    }, [showModal]);
+
     useCheckUser();
 
     useEffect(() => {
@@ -113,16 +119,16 @@ export default function VideoMeetComponent() {
             // That means curr logged in user hai guest nhi hai kyuki guest ka option sirf logout user ko hi dikhta hai .
             const path = window.location.pathname; // e.g., "/meeting-with-neha"
             const code = path.split("/").pop(); // "meeting-with-neha"
-            try{
-                let res = await axios.post(`${USER_ENDPOINT_API}/addCurrMeeting` , {user_id , code} , {
-                    headers : {
-                        "Content-Type" : "application/json"
+            try {
+                let res = await axios.post(`${USER_ENDPOINT_API}/addCurrMeeting`, { user_id, code }, {
+                    headers: {
+                        "Content-Type": "application/json"
                     },
 
-                    withCredentials : true
+                    withCredentials: true
                 })
             }
-            catch(e){
+            catch (e) {
                 console.log(e);
             }
 
@@ -208,15 +214,16 @@ export default function VideoMeetComponent() {
         }
     }
 
+    // This addMessage is a closure function that is why when you are in closure then update you states like prev => because it always refer to the newest value
+    // And when in a closure you have to access the state then use UseRef because state can be staled .
     let addMessage = (data, sender, socketId) => {
         let newMessage = { data, sender };
-
         setMessages(prevMessages => [...prevMessages, newMessage]);
 
-        if (socketRef.current != socketId) {
+        if (socketRef.current.id !== socketId && !modalOpenRef.current) {
             setNewMessages(prev => prev + 1);
         }
-    }
+    };
 
     let connectToSocketServer = () => {
         socketRef.current = io.connect(server_url, { secure: false })
@@ -439,6 +446,15 @@ export default function VideoMeetComponent() {
         setMessage("");
     }
 
+    let handleModal = () => {
+        if (!showModal) {
+            setModal(true);
+            setNewMessages(0);
+        }
+        else {
+            setModal(false);
+        }
+    }
 
     return (
         <div>
@@ -480,7 +496,7 @@ export default function VideoMeetComponent() {
                             </IconButton> : <></>}
 
                         <Badge badgeContent={newMessages} max={999} color='secondary'>
-                            <IconButton onClick={() => setModal(!showModal)} style={{ color: "white" }}>
+                            <IconButton onClick={handleModal} style={{ color: "white" }}>
                                 <ChatIcon />                        </IconButton>
                         </Badge>
 

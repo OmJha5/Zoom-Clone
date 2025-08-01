@@ -25,7 +25,6 @@ const useCheckUser = () => {
                 }
             }
             catch(e){
-                toast.error(e?.response?.data?.message)
                 navigate("/");
             }
         }

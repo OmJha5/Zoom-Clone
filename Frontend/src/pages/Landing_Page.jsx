@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
 import useCheckUser from '../hooks/useCheckUser';
 import { useSelector } from 'react-redux';
+import toast from 'react-hot-toast';
 
 export default function Landing_Page() {
   let navigate = useNavigate();
@@ -30,6 +31,17 @@ export default function Landing_Page() {
   let guestHandler = () => {
     const id = nanoid(10); // Give unique string of 10 characters . nanoid is a library for this
     navigate(`/${id}`)
+  }
+
+  let getStartedClickHandler = (e) => {
+    if(id == null){
+      // that means user logged in nhi hai aur get started pe click karne ki koshish kar raha hai to yeh to galat hai 
+      toast.error("Please login to continue or Join as guest")
+      e.preventDefault(); // yeh link ke navigation ko rok dega
+    }
+    else{
+      navigate("/home");
+    }
   }
 
   return (
@@ -66,7 +78,8 @@ export default function Landing_Page() {
           <p className='mainP'>Join a video call with your friends and family, no matter where they are.</p>
 
           <div role="button">
-            <Link to={"/home"}>Get Started</Link>
+            {/* when you apply click handler to Link to then pehle onClick chalta hai and agar usne preventDefault kardiya then navigation ruk jaata hai  */}
+            <Link to={"/home"} onClick={getStartedClickHandler}>Get Started</Link> 
           </div>
         </div>
 
