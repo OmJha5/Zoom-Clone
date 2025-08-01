@@ -1,3 +1,4 @@
+
 .landingPageContainer{
     width: 100vw;
     height: 100vh;
@@ -63,4 +64,66 @@
 
 .mainP{
     padding-block: 1.4rem;;
+}
+
+/* Home Page Styling */
+.navbar{
+    display: flex;
+    justify-content: space-between;
+    padding : 10px;
+
+}
+
+.navbar li{
+    list-style: none;
+    padding: 5px 15px;
+    cursor: pointer;
+    transition : color 0.5s ease-in-out;
+}
+
+.navbar li:hover{
+    color: rgb(88, 65, 203);
+}
+
+.navbar div ul{
+    display: flex;
+    align-items: center;
+}
+
+.meetContainer{
+    display: flex;
+    height: 80vh;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+.infoContainer{
+    display: flex;
+    gap : 20px;
+    align-items: center;
+}
+
+.btn{
+    height: fit-content;
+    padding : 10px !important;
+    width: 20%;
+}
+
+.input{
+    width: 70%;
+}
+
+.rightImage{
+    width: 60%;
+    height: auto;
+}
+
+.rightPanel{
+    display: flex;
+    justify-content: center;
+}
+
+.heading{
+    font-size: 1.7rem;
+
 }
