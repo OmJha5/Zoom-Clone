@@ -47,7 +47,7 @@ export default function HomePage() {
           <div className="navList">
             <ul>
 
-              <li>
+              <li onClick={() => navigate("/history")}>
                 <IconButton >
                   <RestoreIcon  />
                 </IconButton>

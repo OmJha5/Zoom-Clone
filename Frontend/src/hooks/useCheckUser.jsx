@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux'
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { USER_ENDPOINT_API } from "../utils/apiEndPoint";
-import { setSliceName, setSliceUserName } from "../redux/authSlice";
+import { setSliceName, setSliceUserId, setSliceUserName } from "../redux/authSlice";
 import toast from "react-hot-toast";
 
 const useCheckUser = () => {
@@ -20,12 +20,13 @@ const useCheckUser = () => {
                 if(res.data.success){
                     dispatch(setSliceName(res.data.user.name));
                     dispatch(setSliceUserName(res.data.user.username));
+                    dispatch(setSliceUserId(res.data.user._id));
                     return;
                 }
             }
             catch(e){
                 toast.error(e?.response?.data?.message)
-                navigate("/auth");
+                navigate("/");
             }
         }
 

@@ -15,7 +15,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
-import { setSliceName , setSliceUserName } from '../redux/authSlice.js';
+import { setSliceName , setSliceUserId, setSliceUserName } from '../redux/authSlice.js';
 
 
 const defaultTheme = createTheme();
@@ -50,6 +50,7 @@ export default function Authentication() {
                 if(res.data.success){
                     dispatch(setSliceName(res.data.user.name));
                     dispatch(setSliceUserName(res.data.user.username));
+                    dispatch(setSliceUserId(res.data.user._id));
                     navigate("/home");
                     toast.success("Signin successful");
                 }
@@ -77,6 +78,7 @@ export default function Authentication() {
                 if(res.data.success){
                     dispatch(setSliceName(res.data.user.name));
                     dispatch(setSliceUserName(res.data.user.username));
+                    dispatch(setSliceUserId(res.data.user._id));
                     navigate("/home");
                     toast.success("Signup successful");
                 }

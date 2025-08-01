@@ -1,10 +1,15 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import "../App.css";
 import { Link, useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
+import useCheckUser from '../hooks/useCheckUser';
+import { useSelector } from 'react-redux';
 
 export default function Landing_Page() {
   let navigate = useNavigate();
+  useCheckUser();
+
+  let id = useSelector((state) => state.auth.id);
 
   let registerHandler = () => {
     navigate("/auth" , {
@@ -25,7 +30,6 @@ export default function Landing_Page() {
   let guestHandler = () => {
     const id = nanoid(10); // Give unique string of 10 characters . nanoid is a library for this
     navigate(`/${id}`)
-
   }
 
   return (
@@ -38,7 +42,9 @@ export default function Landing_Page() {
         </div>
         <div className="navList">
           <ul>
-            <li onClick={guestHandler}>Join As Guest</li>
+            {
+              id == null && <li onClick={guestHandler}>Join As Guest</li> // that means agar user logged in nhi hai tabhi yeh show karo
+            }
             <li>
               <div onClick={registerHandler} role="button">
                 <p>Register</p>

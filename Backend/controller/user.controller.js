@@ -1,6 +1,7 @@
 import { User } from "../models/user.models.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { Meeting } from "../models/meeting.models.js";
 
 let register = async(req , res) => {
     try{
@@ -149,4 +150,43 @@ let logout = async(req , res) => {
     }
 }
 
-export {register, login , checkUser , logout};
+let addCurrMeeting = async(req , res) => {
+    try{
+        let {code , user_id} = req.body;
+
+        let newMeeting = await Meeting.create({
+            user_id , meetingCode : code
+        })
+
+        return res.status(200).json({
+            success : true,
+        })
+    }
+    catch(e){
+        return res.status(400).json({
+            message : "Internal Server Error",
+            success : false
+        })
+    }
+}
+
+let getCurrUserAllMeetings = async(req , res) => {
+    try{    
+        let {user_id} = req.body;
+
+        let allMeetings = await Meeting.find({user_id : user_id}).sort({createdAt : -1});
+
+        return res.status(200).json({
+            success : true,
+            allMeetings
+        })
+    }
+    catch(e){
+        return res.status(400).json({
+            message : "Internal Server Error",
+            success : false
+        })
+    }
+}
+
+export {register, login , checkUser , logout , getCurrUserAllMeetings , addCurrMeeting};

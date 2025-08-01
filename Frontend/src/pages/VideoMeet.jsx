@@ -14,6 +14,9 @@ import ChatIcon from '@mui/icons-material/Chat'
 import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { USER_ENDPOINT_API } from '../utils/apiEndPoint';
+import useCheckUser from '../hooks/useCheckUser';
 
 const server_url = "http://localhost:8080";
 
@@ -28,6 +31,7 @@ const peerConfigConnections = {
 export default function VideoMeetComponent() {
     let dispatch = useDispatch();
     let navigate = useNavigate();
+    let user_id = useSelector((state) => state.auth.id);
 
     var socketRef = useRef();
     let socketIdRef = useRef();
@@ -48,6 +52,8 @@ export default function VideoMeetComponent() {
 
     let [videos, setVideos] = useState([])
     let [username, setUsername] = useState("");
+
+    useCheckUser();
 
     useEffect(() => {
         if (setAskForUsername) {
@@ -98,6 +104,28 @@ export default function VideoMeetComponent() {
         }
         catch (e) {
             setAudioAvailable(false);
+        }
+    }
+
+    // Whenever logged in user clicks on connect then we have to save their meeting history in database.
+    let updateMeetingsForCurrUser = async () => {
+        if (user_id != null) {
+            // That means curr logged in user hai guest nhi hai kyuki guest ka option sirf logout user ko hi dikhta hai .
+            const path = window.location.pathname; // e.g., "/meeting-with-neha"
+            const code = path.split("/").pop(); // "meeting-with-neha"
+            try{
+                let res = await axios.post(`${USER_ENDPOINT_API}/addCurrMeeting` , {user_id , code} , {
+                    headers : {
+                        "Content-Type" : "application/json"
+                    },
+
+                    withCredentials : true
+                })
+            }
+            catch(e){
+                console.log(e);
+            }
+
         }
     }
 
@@ -329,6 +357,7 @@ export default function VideoMeetComponent() {
     let connect = () => {
         setAskForUsername(false);
         getMedia();
+        updateMeetingsForCurrUser();
     }
 
     /*
