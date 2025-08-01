@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { USER_ENDPOINT_API } from '../utils/apiEndPoint';
 import useCheckUser from '../hooks/useCheckUser';
+import useCheckUserWithoutNavigating from '../hooks/useCheckUserWithoutNavigating';
 
 const server_url = "http://localhost:8080";
 
@@ -59,7 +60,7 @@ export default function VideoMeetComponent() {
         modalOpenRef.current = showModal;
     }, [showModal]);
 
-    useCheckUser();
+    useCheckUserWithoutNavigating();
 
     useEffect(() => {
         if (setAskForUsername) {

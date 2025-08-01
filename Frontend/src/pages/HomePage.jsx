@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import { USER_ENDPOINT_API } from '../utils/apiEndPoint';
 import { useDispatch } from 'react-redux';
-import { setSliceName, setSliceUserName } from '../redux/authSlice';
+import { setSliceName, setSliceUserId, setSliceUserName } from '../redux/authSlice';
 
 export default function HomePage() {
   let dispatch = useDispatch();
@@ -23,6 +23,7 @@ export default function HomePage() {
         toast.success("Logged out sucessfully")
         dispatch(setSliceUserName(null));
         dispatch(setSliceName(null));
+        dispatch(setSliceUserId(null));
         navigate("/");
       }
     }
