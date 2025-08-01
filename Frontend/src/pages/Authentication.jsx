@@ -11,7 +11,7 @@ import Grid from '@mui/material/Grid';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import {USER_ENDPOINT_API} from '../utils/apiEndPoint';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
@@ -23,11 +23,14 @@ const defaultTheme = createTheme();
 export default function Authentication() {
     let navigate = useNavigate();
     let dispatch = useDispatch();
+    let location = useLocation();
+
+    let value = location.state?.formState || 0;
 
     let [username, setUserName] = React.useState("");
     let [name, setName] = React.useState("");
     let [password, setPassword] = React.useState("");
-    let [formState, setFormState] = React.useState(0); // Means signin if 1 means signup
+    let [formState, setFormState] = React.useState(value); // 0 Means signin if 1 means signup
 
     let isFormValid = () => {
         return username != "" && password != "";

@@ -1,19 +1,38 @@
 import React, { useState } from 'react'
 import useCheckUser from '../hooks/useCheckUser'
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button, IconButton, TextField } from '@mui/material';
 import RestoreIcon from '@mui/icons-material/Restore'
+import toast from 'react-hot-toast';
+import axios from 'axios';
+import { USER_ENDPOINT_API } from '../utils/apiEndPoint';
+import { useDispatch } from 'react-redux';
+import { setSliceName, setSliceUserName } from '../redux/authSlice';
 
 export default function HomePage() {
+  let dispatch = useDispatch();
+  let navigate = useNavigate();
+
   useCheckUser();
   let [meetingCode, setMeetingCode] = useState("");
 
-  let logoutHandler = () => {
-
+  let logoutHandler = async() => {
+    try{
+      let res = await axios.get(`${USER_ENDPOINT_API}/logout` , {withCredentials : true})
+      if(res.data.success){
+        toast.success("Logged out sucessfully")
+        dispatch(setSliceUserName(null));
+        dispatch(setSliceName(null));
+        navigate("/");
+      }
+    }
+    catch(e){
+      toast.error(e?.response?.data?.message)
+    }
   }
 
   let meetingCodeHandler = () => {
-
+    navigate(`/${meetingCode}`)
   }
 
   return (

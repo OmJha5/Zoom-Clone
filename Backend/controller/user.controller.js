@@ -127,7 +127,6 @@ let checkUser = async(req , res) => {
         })
     }
     catch(e){
-        console.log(e);
         return res.status(400).json({
             message : "Internal Server Error",
             success : false
@@ -135,4 +134,19 @@ let checkUser = async(req , res) => {
     }
 }
 
-export {register, login , checkUser};
+let logout = async(req , res) => {
+    try{
+        return res.status(200).cookie("zoomToken" , "" , {maxAge:0 , httpOnly : true , sameSite:process.env.NODE_ENV=="production" ? "none" : "lax" , secure:process.env.NODE_ENV=="production"}).json({
+            message : "Logged Out Successfully!",
+            success : true
+        })
+    }
+    catch(e){
+        return res.status(400).json({
+            message : "Internal Server Error",
+            success : false
+        })
+    }
+}
+
+export {register, login , checkUser , logout};

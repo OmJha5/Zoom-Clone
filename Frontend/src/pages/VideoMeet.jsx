@@ -14,7 +14,6 @@ import ChatIcon from '@mui/icons-material/Chat'
 import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import useCheckUser from "../hooks/useCheckUser.jsx"
 
 const server_url = "http://localhost:8080";
 
@@ -29,8 +28,6 @@ const peerConfigConnections = {
 export default function VideoMeetComponent() {
     let dispatch = useDispatch();
     let navigate = useNavigate();
-
-    const user = useSelector((state) => state.auth.username);
 
     var socketRef = useRef();
     let socketIdRef = useRef();
@@ -51,8 +48,6 @@ export default function VideoMeetComponent() {
 
     let [videos, setVideos] = useState([])
     let [username, setUsername] = useState("");
-
-    useCheckUser();
 
     useEffect(() => {
         if (setAskForUsername) {
@@ -411,7 +406,7 @@ export default function VideoMeetComponent() {
     }
 
     let sendMessage = () => {
-        socketRef.current.emit("chat-message", message, user);
+        socketRef.current.emit("chat-message", message, username);
         setMessage("");
     }
 
