@@ -218,7 +218,7 @@ export default function VideoMeetComponent() {
     // This addMessage is a closure function that is why when you are in closure then update you states like prev => because it always refer to the newest value
     // And when in a closure you have to access the state then use UseRef because state can be staled .
     let addMessage = (data, sender, socketId) => {
-        let newMessage = { data, sender };
+        let newMessage = { data, sender , socketId };
         setMessages(prevMessages => [...prevMessages, newMessage]);
 
         if (socketRef.current.id !== socketId && !modalOpenRef.current) {
@@ -463,17 +463,17 @@ export default function VideoMeetComponent() {
             socketRef.current.emit("user-left");
 
             // Close all peer connections
-            for(let id in connections){
+            for (let id in connections) {
                 connections[id].close();
             }
 
             // Stop all media 
-            if(window.localStream){
+            if (window.localStream) {
                 window.localStream.getTracks().forEach((track) => track.stop());
             }
 
         }
-    } , [])
+    }, [])
 
     let endCall = () => {
         navigate("/")
@@ -554,21 +554,17 @@ export default function VideoMeetComponent() {
                                 <h1>Chat</h1>
 
                                 <div className="chatDisplay">
-                                    {
-                                        messages.map((elm, ind) => {
-                                            return (
-                                                <div key={ind} style={{ padding: "5px" }}>
-                                                    <p style={{ fontStyle: "bold" }}>{elm.sender}</p>
-                                                    <p>{elm.data}</p>
-                                                </div>
-                                            )
-                                        })
-                                    }
+                                    {messages.map((elm, ind) => (
+                                        <div key={ind} className={`chatMessage ${(socketIdRef.current != elm.socketId) ? "white" : "blue"}`}>
+                                            <p className={`chatSender`} >{elm.sender}</p>
+                                            <p className="chatText">{elm.data}</p>
+                                        </div>
+                                    ))}
                                 </div>
 
-                                <div className="chattingArea">
+                                <div className="chattingArea infoContainer">
                                     <TextField id="outlined-basic" value={message} onChange={(e) => setMessage(e.target.value)} label="Enter your message" variant="outlined" />
-                                    <Button variant="contained" onClick={sendMessage}>Send</Button>
+                                    <Button variant="contained" className='btn' onClick={sendMessage}>Send</Button>
                                 </div>
                             </div>
 
