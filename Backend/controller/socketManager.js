@@ -70,7 +70,7 @@ export default function connectToSocket(server) {
         })
 
         // when a user leaves the call
-        socket.on("disconnect" , () => {
+        socket.on("user-left" , () => {
             let matchingRoom = '';
             let found = false;
             for (const [roomKey, roomValue] of Object.entries(connections)) {

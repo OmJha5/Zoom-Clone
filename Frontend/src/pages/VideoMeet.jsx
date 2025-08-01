@@ -456,6 +456,28 @@ export default function VideoMeetComponent() {
         }
     }
 
+    useEffect(() => {
+        return () => {
+            // This is a cleanup function and iske trigger hote hi we have to do all things to remove curr person from the meeting
+            socketRef.current.emit("user-left");
+
+            // Close all peer connections
+            for(let id in connections){
+                connections[id].close();
+            }
+
+            // Stop all media 
+            if(window.localStream){
+                window.localStream.getTracks().forEach((track) => track.stop());
+            }
+
+        }
+    } , [])
+
+    let endCall = () => {
+        navigate("/")
+    }
+
     return (
         <div>
 
@@ -483,7 +505,7 @@ export default function VideoMeetComponent() {
                         <IconButton onClick={handleVideo} style={{ color: "white" }}>
                             {(video === true) ? <VideocamIcon /> : <VideocamOffIcon />}
                         </IconButton>
-                        <IconButton style={{ color: "red" }}>
+                        <IconButton style={{ color: "red" }} onClick={endCall}>
                             <CallEndIcon />
                         </IconButton>
                         <IconButton onClick={handleAudio} style={{ color: "white" }}>
