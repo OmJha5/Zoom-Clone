@@ -4,6 +4,7 @@ import axios from 'axios';
 import { USER_ENDPOINT_API } from '../utils/apiEndPoint';
 import { useSelector } from 'react-redux';
 import { CircularProgress, Backdrop } from "@mui/material";
+import { Link } from 'react-router-dom';
 
 export default function History() {
     useCheckUser();
@@ -42,6 +43,22 @@ export default function History() {
         getAllHistory();
     }, [user_id])
 
+    let logoutHandler = async () => {
+        try {
+            let res = await axios.get(`${USER_ENDPOINT_API}/logout`, { withCredentials: true })
+            if (res.data.success) {
+                toast.success("Logged out sucessfully")
+                dispatch(setSliceUserName(null));
+                dispatch(setSliceName(null));
+                dispatch(setSliceUserId(null));
+                navigate("/");
+            }
+        }
+        catch (e) {
+            toast.error(e?.response?.data?.message)
+        }
+    }
+
     return (
         <div>
             {
@@ -50,16 +67,43 @@ export default function History() {
                         <CircularProgress color="inherit" />
                     </Backdrop>
                 ) : (
-                    allMessages.length == 0 ? (
-                        <h1>You Have not attended any meeting yet!</h1>
-                    ) : (
-                        allMessages.map((elm, ind) => {
-                            return <div key={ind} >
-                                <p>{elm.meetingCode}</p>
-                                <p>{elm.createdAt}</p>
+                    <div>
+                        <nav className="navbar">
+                            <div className="navHeader">
+                                <h2>
+                                    <Link style={{ textDecoration: "none", color: "black" }} to={"/"}>Zoom Video Call</Link>
+                                </h2>
                             </div>
-                        })
-                    )
+                            <div className="navList">
+                                <ul>
+                                    <li className="navItem">
+                                        <div role="button" className="navLogoutBtn" onClick={logoutHandler}>
+                                            Logout
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </nav>
+
+                        {allMessages.length === 0 ? (
+                            <div className="historyEmpty">
+                                <h2>You haven't attended any meetings yet!</h2>
+                            </div>
+                        ) : (
+                            <div className="historyContainer">
+                                <h2 className="historyTitle">Meeting History</h2>
+                                <div className="historyList">
+                                    {allMessages.map((elm, ind) => (
+                                        <div key={ind} className="historyCard">
+                                            <p><strong>Meeting Code:</strong> {elm.meetingCode}</p>
+                                            <p><strong>Date:</strong> {new Date(elm.createdAt).toLocaleString()}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                    </div>
                 )
             }
 

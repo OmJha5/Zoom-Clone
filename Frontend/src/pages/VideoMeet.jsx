@@ -218,7 +218,7 @@ export default function VideoMeetComponent() {
     // This addMessage is a closure function that is why when you are in closure then update you states like prev => because it always refer to the newest value
     // And when in a closure you have to access the state then use UseRef because state can be staled .
     let addMessage = (data, sender, socketId) => {
-        let newMessage = { data, sender , socketId };
+        let newMessage = { data, sender, socketId };
         setMessages(prevMessages => [...prevMessages, newMessage]);
 
         if (socketRef.current.id !== socketId && !modalOpenRef.current) {
@@ -484,12 +484,14 @@ export default function VideoMeetComponent() {
 
             {askForUsername === true ?
 
-                <div>
+                <div className='lobbyContainer'>
 
 
                     <h2>Enter into Lobby </h2>
-                    <TextField id="outlined-basic" label="Username" value={username} onChange={(e) => setUsername(e.target.value)} variant="outlined" />
-                    <Button variant="contained" onClick={connect}>Connect</Button>
+                    <div className="infoContainer">
+                        <TextField id="outlined-basic" label="Username" value={username} onChange={(e) => setUsername(e.target.value)} variant="outlined" />
+                        <Button variant="contained" onClick={connect}>Connect</Button>
+                    </div>
 
 
                     <div>

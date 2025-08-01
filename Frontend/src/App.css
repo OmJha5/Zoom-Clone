@@ -1,4 +1,6 @@
 
+/* Landing page styling  */
+
 .landingPageContainer{
     width: 100vw;
     height: 100vh;
@@ -66,13 +68,67 @@
     padding-block: 1.4rem;;
 }
 
-/* Home Page Styling */
-.navbar{
-    display: flex;
-    justify-content: space-between;
-    padding : 10px;
+@media screen and (max-width: 1024px) {
+  .landingPageMainContainer {
+    padding-inline: 1.5rem;
+  }
 
+  .landingPageMainContainer > div:nth-child(2) img {
+    height: 50vh;
+  }
 }
+
+@media screen and (max-width: 768px) {
+  .landingPageMainContainer {
+    flex-direction: column-reverse;
+    justify-content: center;
+    align-items: center;
+    padding-inline: 1rem;
+    text-align: center;
+    gap: 2rem;
+  }
+
+  .landingPageMainContainer > div:nth-child(2) img {
+    height: 40vh;
+  }
+
+  .landingPageMainContainer > div:nth-child(1) div[role="button"] {
+    margin-inline: auto;
+  }
+
+  .landingPageContainer nav {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .landingPageContainer .navList ul {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .landingPageMainContainer > div:nth-child(1) h1 {
+    font-size: 1.4rem;
+  }
+
+  .landingPageMainContainer > div:nth-child(1) .mainP {
+    font-size: 0.95rem;
+  }
+
+  .landingPageMainContainer > div:nth-child(1) div[role="button"] a {
+    font-size: 1rem;
+  }
+
+  .landingPageMainContainer > div:nth-child(2) img {
+    height: 35vh;
+  }
+}
+
+
+/* Home Page Styling */
 
 .navbar li{
     list-style: none;
@@ -126,4 +182,175 @@
 .heading{
     font-size: 1.7rem;
 
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  background-color: white;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navHeader h2 {
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.navList ul {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  margin: 0;
+  padding: 0;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background 0.2s ease-in-out;
+  cursor: pointer;
+  user-select: none;
+}
+
+.navItem:hover {
+  background-color: #f1f1f1;
+}
+
+.navText {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.navLogoutBtn {
+  font-weight: 500;
+  font-size: 1rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background-color: #f44336;
+  color: white;
+  transition: background 0.3s ease;
+}
+
+.navLogoutBtn:hover {
+  background-color: #d32f2f;
+}
+
+@media screen and (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px 16px;
+    gap: 12px;
+  }
+
+  .navList ul {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .navItem {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .navLogoutBtn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .meetContainer {
+    flex-direction: column-reverse;
+    padding: 1rem;
+    text-align: center;
+    gap: 2rem;
+  }
+
+  .input {
+    width: 100% !important;
+  }
+
+  .btn {
+    width: 100% !important;
+  }
+
+  .rightImage {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+/* History below code  */
+
+.historyContainer {
+  padding: 2rem;
+  max-width: 900px;
+  margin: auto;
+}
+
+.historyTitle {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: #333;
+}
+
+.historyList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.historyCard {
+  background-color: #f5f5f5;
+  padding: 1rem 1.2rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease-in-out;
+}
+
+.historyCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.historyCard p {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.historyEmpty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #777;
+  font-size: 1.3rem;
+}
+
+@media screen and (max-width: 768px) {
+  .historyContainer {
+    padding: 1rem;
+  }
+
+  .historyTitle {
+    font-size: 1.5rem;
+  }
+
+  .historyCard {
+    padding: 1rem;
+  }
+
+  .historyCard p {
+    font-size: 0.9rem;
+  }
 }

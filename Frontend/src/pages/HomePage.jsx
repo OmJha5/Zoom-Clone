@@ -16,10 +16,10 @@ export default function HomePage() {
   useCheckUser();
   let [meetingCode, setMeetingCode] = useState("");
 
-  let logoutHandler = async() => {
-    try{
-      let res = await axios.get(`${USER_ENDPOINT_API}/logout` , {withCredentials : true})
-      if(res.data.success){
+  let logoutHandler = async () => {
+    try {
+      let res = await axios.get(`${USER_ENDPOINT_API}/logout`, { withCredentials: true })
+      if (res.data.success) {
         toast.success("Logged out sucessfully")
         dispatch(setSliceUserName(null));
         dispatch(setSliceName(null));
@@ -27,7 +27,7 @@ export default function HomePage() {
         navigate("/");
       }
     }
-    catch(e){
+    catch (e) {
       toast.error(e?.response?.data?.message)
     }
   }
@@ -47,21 +47,18 @@ export default function HomePage() {
           </div>
           <div className="navList">
             <ul>
-
-              <li onClick={() => navigate("/history")}>
-                <IconButton >
-                  <RestoreIcon  />
+              <li onClick={() => navigate("/history")} className="navItem">
+                <IconButton className="navIcon">
+                  <RestoreIcon />
                 </IconButton>
-                History
+                <span className="navText">History</span>
               </li>
-
-              <li>
-                <div role="button" onClick={logoutHandler}>
+              <li className="navItem">
+                <div role="button" className="navLogoutBtn" onClick={logoutHandler}>
                   Logout
                 </div>
               </li>
             </ul>
-
           </div>
         </nav>
 
