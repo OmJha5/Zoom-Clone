@@ -49,7 +49,7 @@ export default function Landing_Page() {
       <nav>
         <div className="navHeader">
           <h2>
-            <Link style={{ textDecoration: "none", color: "white" }} to={"/"}>Zoom Video Call</Link>
+            <Link style={{ textDecoration: "none", color: "white" }} to={"/"}>VibeCall</Link>
           </h2>
         </div>
         <div className="navList">

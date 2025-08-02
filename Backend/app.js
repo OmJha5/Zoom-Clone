@@ -14,7 +14,7 @@ dotenv.config({});
 let app = express();
 let server = createServer(app);
 let io = connectToSocket(server);
-let port = process.env.PORT || 8080;
+let port = process.env.PORT || 4000;
 
 app.use(cookieParser());
 

@@ -2,12 +2,16 @@ import React, { useEffect, useState } from 'react'
 import useCheckUser from '../hooks/useCheckUser'
 import axios from 'axios';
 import { USER_ENDPOINT_API } from '../utils/apiEndPoint';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { CircularProgress, Backdrop } from "@mui/material";
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { setSliceName, setSliceUserId, setSliceUserName } from '../redux/authSlice';
+import toast from 'react-hot-toast';
 
 export default function History() {
     useCheckUser();
+    let dispatch = useDispatch();
+    let navigate = useNavigate();
 
     let [allMessages, setAllMessages] = useState([]);
     let user_id = useSelector((state) => state.auth.id)

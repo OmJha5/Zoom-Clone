@@ -18,8 +18,9 @@ import axios from 'axios';
 import { USER_ENDPOINT_API } from '../utils/apiEndPoint';
 import useCheckUser from '../hooks/useCheckUser';
 import useCheckUserWithoutNavigating from '../hooks/useCheckUserWithoutNavigating';
+import { server_url } from '../utils/apiEndPoint';
 
-const server_url = "http://localhost:8080";
+const server_url = `${server_url}`;
 
 var connections = {};
 
