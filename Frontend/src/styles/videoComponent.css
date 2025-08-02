@@ -27,7 +27,7 @@
     bottom: 10vh;
     height: 20vh;
     width: auto;
-    left: 0;
+    left: 17px;
     border-radius: 20px;
 }
 
@@ -55,7 +55,8 @@
 }
 
 .singleVideo>video {
-    width: 20vw;
+    min-width: 20vw;
+    max-width: 50vw;
     border-radius: 15px;
 }
 
@@ -138,5 +139,20 @@
         right: 0;
         margin-inline: 20px;
         bottom: 75px;
+    }
+
+    .chattingArea{
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .btn{
+        width: fit-content !important;
+        width: 20%;
+    }
+
+    .chattTxt{
+        width: 60%;
     }
 }

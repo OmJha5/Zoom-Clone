@@ -17,7 +17,6 @@ export default function connectToSocket(server) {
 
         // When a new user joins the call
         socket.on("join-call", (path) => {
-            console.log("A new user joined on " + path);
             if (connections[path] == undefined) connections[path] = [];
             connections[path].push(socket.id);
 

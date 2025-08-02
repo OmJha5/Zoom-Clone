@@ -469,6 +469,7 @@ export default function VideoMeetComponent() {
 
     useEffect(() => {
         return () => {
+
             // This is a cleanup function and iske trigger hote hi we have to do all things to remove curr person from the meeting
             socketRef.current.emit("user-left");
 
@@ -505,8 +506,15 @@ export default function VideoMeetComponent() {
 
 
                     <div>
-                        <video ref={localVideoref} autoPlay muted></video>
+                        <video ref={localVideoref} autoPlay muted></video> 
+                        {/* autoplay means video will play immediately without user effect */}
                     </div>
+
+
+                    {/* Case	                  Can you hear your own voice?	          Can others hear your voice?
+                        muted is present	      ❌ No	                                ✅ Yes
+                        muted is not present	  ✅ Yes (you hear your surroundings)	✅ Yes */}
+
 
                 </div> :
 
@@ -541,16 +549,17 @@ export default function VideoMeetComponent() {
                     <video className="meetUserVideo" ref={localVideoref} autoPlay></video>
 
                     <div className="videoDiv">
-                        {videos.map((video , ind) => (
+                        {videos.map((video, ind) => (
                             <div key={ind} className='singleVideo'>
                                 <video
 
-                                    data-socket={video.socketId}
                                     ref={ref => {
                                         if (ref && video.stream) {
                                             ref.srcObject = video.stream;
                                         }
                                     }}
+
+                                    muted
                                     autoPlay
                                 >
                                 </video>
@@ -575,7 +584,7 @@ export default function VideoMeetComponent() {
                                 </div>
 
                                 <div className="chattingArea infoContainer">
-                                    <TextField id="outlined-basic" value={message} onChange={(e) => setMessage(e.target.value)} label="Enter your message" variant="outlined" />
+                                    <TextField className='chattTxt' id="outlined-basic" value={message} onChange={(e) => setMessage(e.target.value)} label="Enter your message" variant="outlined" />
                                     <Button variant="contained" className='btn' onClick={sendMessage}>Send</Button>
                                 </div>
                             </div>
