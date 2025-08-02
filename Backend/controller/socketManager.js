@@ -7,7 +7,8 @@ let timeOnline = {}
 export default function connectToSocket(server) {
     const io = new Server(server, {
         cors: {
-            origin: "http://localhost:5173",
+            // origin: "http://localhost:5173",
+            origin : "https://zoom-clone-frontend-bupu.onrender.com",
             credentials: true
         }
     });
@@ -16,6 +17,7 @@ export default function connectToSocket(server) {
 
         // When a new user joins the call
         socket.on("join-call", (path) => {
+            console.log("A new user joined on " + path);
             if (connections[path] == undefined) connections[path] = [];
             connections[path].push(socket.id);
 

@@ -25,8 +25,8 @@ let server_url = `${backend_url}`;
 var connections = {};
 
 const peerConfigConnections = {
-    "iceServers": [
-        { "urls": "stun:stun.l.google.com:19302" }
+    iceServers: [
+        { urls: "stun:stun.l.google.com:19302" }
     ]
 }
 
@@ -161,7 +161,9 @@ export default function VideoMeetComponent() {
         for (let id in connections) {
             if (id === socketIdRef.current) continue
 
-            connections[id].addStream(window.localStream)
+            window.localStream.getTracks().forEach(track => {
+                connections[id].addTrack(track, window.localStream);
+            });
 
             connections[id].createOffer().then((description) => {
                 connections[id].setLocalDescription(description)
@@ -169,7 +171,7 @@ export default function VideoMeetComponent() {
                         socketRef.current.emit('signal', id, JSON.stringify({ 'sdp': connections[id].localDescription }))
                     })
                     .catch(e => console.log(e))
-            })
+            }).catch(e => console.log(e))
         }
     }
 
@@ -261,7 +263,8 @@ export default function VideoMeetComponent() {
                     }
 
                     // Wait for their video stream
-                    connections[socketListId].onaddstream = (event) => {
+                    connections[socketListId].ontrack = (event) => {
+                        const [stream] = event.streams;
 
                         let videoExists = videoRef.current?.find(video => video.socketId === socketListId);
 
@@ -270,7 +273,7 @@ export default function VideoMeetComponent() {
                             // Update the stream of the existing video
                             setVideos(videos => {
                                 const updatedVideos = videos.map(video =>
-                                    video.socketId === socketListId ? { ...video, stream: event.stream } : video
+                                    video.socketId === socketListId ? { ...video, stream: stream } : video
                                 );
                                 videoRef.current = updatedVideos;
                                 return updatedVideos;
@@ -279,7 +282,7 @@ export default function VideoMeetComponent() {
                             // Create a new video
                             let newVideo = {
                                 socketId: socketListId,
-                                stream: event.stream,
+                                stream: stream,
                                 autoplay: true,
                                 playsinline: true
                             };
@@ -299,12 +302,16 @@ export default function VideoMeetComponent() {
                         // And in this case Old user don't have to create any offer because that is being done from old user
                         // Once connection is estabilished then which ever client has to send stream then it only negotiates with new stream and offer rest clients will just answer their offer.
                         if (window.localStream !== undefined && window.localStream !== null) {
-                            connections[socketListId].addStream(window.localStream)
+                            window.localStream.getTracks().forEach(track => {
+                                connections[socketListId].addTrack(track, window.localStream);
+                            });
                         }
                         else {
                             let blackSilence = (...args) => new MediaStream([black(...args), silence()]) // It will silent media stream because in intial setup if no stream then still we have to add it
                             window.localStream = blackSilence()
-                            connections[socketListId].addStream(window.localStream)
+                            window.localStream.getTracks().forEach(track => {
+                                connections[socketListId].addTrack(track, window.localStream);
+                            });
                         }
                     }
                 })
@@ -318,7 +325,9 @@ export default function VideoMeetComponent() {
                         if (id2 === socketIdRef.current) continue
 
                         try {
-                            connections[id2].addStream(window.localStream)
+                            window.localStream.getTracks().forEach(track => {
+                                connections[id2].addTrack(track, window.localStream);
+                            });
                         } catch (e) { }
 
                         connections[id2].createOffer().then((description) => {
@@ -327,7 +336,7 @@ export default function VideoMeetComponent() {
                                     socketRef.current.emit('signal', id2, JSON.stringify({ 'sdp': connections[id2].localDescription }))
                                 })
                                 .catch(e => console.log(e))
-                        })
+                        }).catch((e) => console.log(e));
                     }
                 }
             })
@@ -374,7 +383,6 @@ export default function VideoMeetComponent() {
     But if the user adds a new stream (like screen sharing) or removes one, we need to inform the other person by creating a new offer. That’s called renegotiation."
     */
     let getDisplayMediaSucess = async (stream) => {
-        console.log("Started");
         try {
             window.localStream.getTracks().forEach(track => track.stop())
         }
@@ -386,7 +394,9 @@ export default function VideoMeetComponent() {
         for (let id in connections) {
             if (id === socketIdRef.current) continue
 
-            connections[id].addStream(window.localStream)
+            window.localStream.getTracks().forEach(track => {
+                connections[id].addTrack(track, window.localStream);
+            });
 
             connections[id].createOffer().then((description) => {
                 connections[id].setLocalDescription(description)
@@ -394,11 +404,10 @@ export default function VideoMeetComponent() {
                         socketRef.current.emit('signal', id, JSON.stringify({ 'sdp': connections[id].localDescription }))
                     })
                     .catch(e => console.log(e))
-            })
+            }).catch((e) => console.log(e));
         }
 
         stream.getTracks().forEach(track => track.onended = () => { // it is checking if any track is ended if yes means user ne screen share band kar diya hai 
-            console.log("Finised")
             setScreen(false)
 
             try {
@@ -532,8 +541,8 @@ export default function VideoMeetComponent() {
                     <video className="meetUserVideo" ref={localVideoref} autoPlay></video>
 
                     <div className="videoDiv">
-                        {videos.map((video) => (
-                            <div key={video.socketId} className='singleVideo'>
+                        {videos.map((video , ind) => (
+                            <div key={ind} className='singleVideo'>
                                 <video
 
                                     data-socket={video.socketId}
