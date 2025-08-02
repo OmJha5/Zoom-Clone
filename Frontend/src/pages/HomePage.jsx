@@ -77,7 +77,7 @@ export default function HomePage() {
           </div>
 
           <div className="rightPanel">
-            <img className='rightImage' src="../public/images/logo3.png" alt="" />
+            <img className='rightImage' src="/images/logo3.png" alt="" />
           </div>
         </div>
       </div>
