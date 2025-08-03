@@ -7,8 +7,8 @@ let timeOnline = {}
 export default function connectToSocket(server) {
     const io = new Server(server, {
         cors: {
-            // origin: "http://localhost:5173",
-            origin : "https://zoom-clone-frontend-bupu.onrender.com",
+            origin: "http://localhost:5173",
+            // origin : "https://zoom-clone-frontend-bupu.onrender.com",
             credentials: true
         }
     });
@@ -54,8 +54,8 @@ export default function connectToSocket(server) {
                 }
             }
 
-            if(found){
-                if(messages[matchingRoom] == undefined) messages[matchingRoom] = [];
+            if (found) {
+                if (messages[matchingRoom] == undefined) messages[matchingRoom] = [];
                 messages[matchingRoom].push({
                     "data": data,
                     "sender": sender,
@@ -70,8 +70,9 @@ export default function connectToSocket(server) {
 
         })
 
-        // when a user leaves the call
-        socket.on("user-left" , () => {
+        // Triggered automatically when a client loses connection, closes the tab, or refreshes.
+        // You don’t need to emit it manually — Socket.IO handles it for you.
+        socket.on("disconnect", () => {
             let matchingRoom = '';
             let found = false;
             for (const [roomKey, roomValue] of Object.entries(connections)) {
@@ -93,6 +94,10 @@ export default function connectToSocket(server) {
                     delete messages[matchingRoom];
                 }
             }
+        })
+
+        socket.on("force-update", (to) => {
+            socket.to(to).emit("force-update" , socket.id);
         })
 
 

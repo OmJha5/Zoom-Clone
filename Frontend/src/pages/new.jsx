@@ -16,6 +16,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { USER_ENDPOINT_API } from '../utils/apiEndPoint';
+import useCheckUser from '../hooks/useCheckUser';
 import useCheckUserWithoutNavigating from '../hooks/useCheckUserWithoutNavigating';
 import { backend_url } from '../utils/apiEndPoint';
 
@@ -39,22 +40,20 @@ export default function VideoMeetComponent() {
     let localVideoref = useRef();
     let videoRef = useRef();
 
-    let [videoAvailable, setVideoAvailable] = useState();
-    let [audioAvailable, setAudioAvailable] = useState();
+    let [videoAvailable, setVideoAvailable] = useState(true);
+    let [audioAvailable, setAudioAvailable] = useState(true);
     let [video, setVideo] = useState();
     let [audio, setAudio] = useState();
+    let [screen, setScreen] = useState();
     let [showModal, setModal] = useState(true);
     let [screenAvailable, setScreenAvailable] = useState(true);
     let [messages, setMessages] = useState([])
     let [message, setMessage] = useState("");
     let [newMessages, setNewMessages] = useState(0);
     let [askForUsername, setAskForUsername] = useState(true);
-    let [screen , setScreen] = useState();
 
     let [videos, setVideos] = useState([])
     let [username, setUsername] = useState("");
-    let screenRef = useRef();
-
 
     const modalOpenRef = useRef(false);
 
@@ -83,39 +82,16 @@ export default function VideoMeetComponent() {
 
     useEffect(() => {
         let getStream = async () => {
-            let tracks = [];
-
-            try {
-                if (audioAvailable) {
-                    const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    tracks.push(...audioStream.getAudioTracks());
-                }
-            }
-            catch (err) {
-                console.warn("Audio access failed:", err);
-            }
-
-            try {
-                if (videoAvailable) {
-                    const videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    tracks.push(...videoStream.getVideoTracks());
-                }
-            }
-            catch (err) {
-                console.warn("Video access failed:", err);
-            }
-
-            tracks = new MediaStream(tracks);
-
-            if (tracks) {
-                window.localStream = tracks;
+            const userMediaStream = await navigator.mediaDevices.getUserMedia({ video: videoAvailable, audio: audioAvailable });
+            if (userMediaStream) {
+                window.localStream = userMediaStream;
                 if (localVideoref.current) {
-                    localVideoref.current.srcObject = tracks;
+                    localVideoref.current.srcObject = userMediaStream;
                 }
             }
         }
 
-        if (videoAvailable != undefined && audioAvailable != undefined) getStream(); // That means pehle permission lelo audio and video then yeh chalao
+        getStream();
 
     }, [videoAvailable, audioAvailable])
 
@@ -176,29 +152,21 @@ export default function VideoMeetComponent() {
 
     let getUserMediaSuccess = (stream) => {
 
-        console.log("getUserMediaSuccess is called", video, audio);
-        console.log("getUserMediaSuccess called, connections:", Object.keys(connections));
-
-        if (screenRef.current != true) {
-            try {
-                if (window.localStream) {
-                    window.localStream.getTracks().forEach(track => track.stop());
-                }
+        try {
+            if (window.localStream) {
+                window.localStream.getTracks().forEach(track => track.stop());
             }
-            catch (e) {
-                console.log(e);
-            }
-
-            window.localStream = stream;
-            localVideoref.current.srcObject = stream;
+        } catch (e) {
+            console.log(e);
         }
+
+        window.localStream = stream;
+        localVideoref.current.srcObject = stream;
 
         for (let id in connections) {
             if (id === socketIdRef.current) continue;
 
             const pc = connections[id];
-            console.log(stream.getAudioTracks());
-            console.log(stream.getVideoTracks());
             const videoTrack = stream.getVideoTracks().length > 0 ? stream.getVideoTracks()[0] : undefined;
             const audioTrack = stream.getAudioTracks().length > 0 ? stream.getAudioTracks()[0] : undefined;
 
@@ -207,53 +175,41 @@ export default function VideoMeetComponent() {
             // VIDEO TRACK HANDLING
             const videoSender = senders.find(s => s.track?.kind === 'video');
             // console.log(video , videoSender , videoTrack)
-            if (screenRef.current != true) {
-                if (video && videoTrack) {
-                    if (videoSender) {
-                        console.log("1");
-                        videoSender.replaceTrack(videoTrack);
-                        socketRef.current.emit("force-update", id);
-                    }
-                    else {
-                        console.log("2");
-                        pc.addTrack(videoTrack, stream);
-                        renegotiate(pc, id);
-                    }
+            if (video && videoTrack) {
+                if (videoSender) {
+                    console.log("1");
+                    videoSender.replaceTrack(videoTrack);
+                    renegotiate(pc, id);
                 }
                 else {
-                    if (videoSender) {
-                        console.log("3");
-                        videoSender.replaceTrack(null);
-                        socketRef.current.emit("force-update", id);
-                    }
+                    console.log("2");
+                    pc.addTrack(videoTrack, stream);
+                    renegotiate(pc, id);
+                }
+            }
+            else {
+                if (videoSender) {
+                    console.log("3");
+                    videoSender.replaceTrack(null);
                 }
             }
 
             // AUDIO TRACK HANDLING (optional)
-
-            let sender = pc.getSenders().find(s => s.track && s.track.kind == "audio");
-
-            sender.enabled = (audio) ? false : true;
-            // if (audio && audioTrack) {
-            //     if (audioSender) {
-            //         audioSender.replaceTrack(audioTrack);
-            //         socketRef.current.emit("force-update", id);
-            //         console.log("4");
-            //     }
-            //     else {
-            //         console.log("5");
-            //         pc.addTrack(audioTrack, stream);
-            //         if (videoTrack != undefined) pc.addTrack(videoTrack, stream);
-            //         renegotiate(pc, id);
-            //     }
-            // }
-            // else {
-            //     if (audioSender) {
-            //         console.log("6");
-            //         audioSender.replaceTrack(null);
-            //         socketRef.current.emit("force-update", id);
-            //     }
-            // }
+            const audioSender = senders.find(s => s.track?.kind === 'audio');
+            if (audio && audioTrack) {
+                if (audioSender) {
+                    audioSender.replaceTrack(audioTrack);
+                    renegotiate(pc, id);
+                } else {
+                    pc.addTrack(audioTrack, stream);
+                    renegotiate(pc, id);
+                }
+            }
+            else {
+                if (audioSender) {
+                    audioSender.replaceTrack(null);
+                }
+            }
         }
     };
 
@@ -270,39 +226,14 @@ export default function VideoMeetComponent() {
 
     let getUserMedia = () => {
         if (video || audio) {
+            console.log("I am in user media")
             // when .then and catch will run ?
             // jab browser ne jo video and audio ka access diya hai agar wahi yaha pe likha hai then woh stream ke sath .then chal jayega 
             // eg agar browser ne video ka access nhi diya and audio diya hai and yaha pe video : true karke koshish karenge then .catch chal jayega
             // and if browser ne access diya hua hai to either aap yeh true ke sath aao ya false doesn't matter 
-            async function getCombinedStream() {
-                const tracks = [];
-
-                try {
-                    if (audio) {
-                        const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        tracks.push(...audioStream.getAudioTracks());
-                    }
-                }
-                catch (err) {
-                    console.warn("Audio access failed:", err);
-                }
-
-                try {
-                    if (video) {
-                        const videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                        tracks.push(...videoStream.getVideoTracks());
-                    }
-                }
-                catch (err) {
-                    console.warn("Video access failed:", err);
-                }
-
-                return new MediaStream(tracks);
-            }
-
-            getCombinedStream()
+            navigator.mediaDevices.getUserMedia({ video: video, audio: audio })
                 .then(getUserMediaSuccess)
-                .catch((e) => console.log(e));
+                .catch((e) => console.log(e))
         }
         else {
             try {
@@ -348,176 +279,127 @@ export default function VideoMeetComponent() {
         }
     };
 
-    let handleAttach = async (socketListId, stream) => {
-        setVideos((videos) => {
-            const videoExists = videos.find(video => video.socketId === socketListId);
-
-            if (videoExists) {
-                // Update existing stream
-                const updated = videos.map(video =>
-                    video.socketId === socketListId ? { ...video, stream } : video
-                );
-                videoRef.current = updated;
-                return updated;
-            }
-            else {
-                // Add new video
-                const newVideo = {
-                    socketId: socketListId,
-                    stream,
-                    autoplay: true,
-                    playsinline: true
-                };
-                const updated = [...videos, newVideo];
-                videoRef.current = updated;
-                return updated;
-            }
-        });
-    };
-
-
     let connectToSocketServer = () => {
-        try {
-            console.log("Before io.connect")
-            socketRef.current = io.connect(server_url, { secure: false })
+        socketRef.current = io.connect(server_url, { secure: false })
 
-            socketRef.current.on('signal', gotMessageFromServer)
+        socketRef.current.on('signal', gotMessageFromServer)
 
-            console.log("Before on connect")
-            socketRef.current.on('connect', () => {
-                console.log("After on connect")
-                socketRef.current.emit('join-call', window.location.href)
-                socketIdRef.current = socketRef.current.id
+        socketRef.current.on('connect', () => {
+            socketRef.current.emit('join-call', window.location.href)
+            socketIdRef.current = socketRef.current.id
 
-                socketRef.current.on('chat-message', addMessage)
+            socketRef.current.on('chat-message', addMessage)
 
-                socketRef.current.on('user-left', (id) => {
-                    setVideos((videos) => videos.filter((video) => video.socketId !== id))
-                })
+            socketRef.current.on('user-left', (id) => {
+                setVideos((videos) => videos.filter((video) => video.socketId !== id))
+            })
 
-                socketRef.current.on("force-update", (fromId) => {
-                    console.log("Emit came to me with fromId:", fromId);
-                    console.log("Current connections:", Object.keys(connections));
+            socketRef.current.on('user-joined', (id, clients) => {
 
-                    const pc = connections[fromId];
-                    if (!pc) return;
+                clients.forEach((socketListId) => {
 
-                    const receivers = pc.getReceivers();
-                    console.log("Receivers:", receivers); // 🕵️ this will help debug what's in there
+                    if (socketIdRef.current == socketListId) return;
 
-                    let videoTrack = null;
-                    let audioTrack = null;
+                    if (connections[socketListId]) return; // if yes then current browser client already has connection with this socket if yes then agar handshake hogaya hai to phir se kyu karen that is the concept. they are already in a single room
 
-                    for (const receiver of receivers) {
-                        if (receiver.track == null) {
-                            console.log("Receiver with null track:", receiver);
-                            continue;
-                        }
+                    // Create a WebRTC connection with settings in peerConfigConnections and store it using the other user’s ID.”
+                    connections[socketListId] = new RTCPeerConnection(peerConfigConnections)
 
-                        console.log("Receiver track kind:", receiver.track.kind);
-                        if (receiver.track.kind === "video") {
-                            videoTrack = receiver.track;
-                        }
-                        else if (receiver.track.kind === "audio") {
-                            audioTrack = receiver.track;
+                    // onicecandidate is a handler so      
+                    connections[socketListId].onicecandidate = function (event) {
+                        if (event.candidate != null) {
+                            socketRef.current.emit('signal', socketListId, JSON.stringify({ 'ice': event.candidate }))
                         }
                     }
 
-                    console.log("HURRA");
-                    console.log("videoTrack:", videoTrack);
-                    console.log("audioTrack:", audioTrack);
+                    // Wait for their video stream
+                    connections[socketListId].ontrack = (event) => {
+                        console.log("Came with new Stream");
+                        const [stream] = event.streams;
 
-                    console.log("Video Label : ", videoTrack.getSettings().label)
+                        const handleTrack = () => {
+                            let videoExists = videoRef.current?.find(video => video.socketId === socketListId);
 
-                    const tracks = [];
-                    if (videoTrack) tracks.push(videoTrack);
-                    if (audioTrack) tracks.push(audioTrack);
+                            if (videoExists) {
+                                setVideos(videos => {
+                                    const updatedVideos = videos.map(video =>
+                                        video.socketId === socketListId ? { ...video, stream: stream } : video
+                                    );
+                                    videoRef.current = updatedVideos;
+                                    return updatedVideos;
+                                });
+                            } 
+                            else {
+                                let newVideo = {
+                                    socketId: socketListId,
+                                    stream: stream,
+                                    autoplay: true,
+                                    playsinline: true
+                                };
 
-                    const stream = new MediaStream(tracks);
-                    handleAttach(fromId, stream);
-                });
-
-
-                socketRef.current.on('user-joined', (id, clients) => {
-
-                    clients.forEach((socketListId) => {
-
-                        if (socketIdRef.current == socketListId) return;
-                        console.log(socketListId)
-
-                        if (connections[socketListId]) return; // if yes then current browser client already has connection with this socket if yes then agar handshake hogaya hai to phir se kyu karen that is the concept. they are already in a single room
-
-                        // Create a WebRTC connection with settings in peerConfigConnections and store it using the other user’s ID.”
-                        connections[socketListId] = new RTCPeerConnection(peerConfigConnections)
-
-                        // onicecandidate is a handler so      
-                        connections[socketListId].onicecandidate = function (event) {
-                            if (event.candidate != null) {
-                                socketRef.current.emit('signal', socketListId, JSON.stringify({ 'ice': event.candidate }))
+                                setVideos(videos => {
+                                    const updatedVideos = [...videos, newVideo];
+                                    videoRef.current = updatedVideos;
+                                    return updatedVideos;
+                                });
                             }
-                        }
-
-                        // Wait for their video stream
-                        connections[socketListId].ontrack = (event) => {
-                            console.log("Came with new Stream");
-                            const [stream] = event.streams;
-
-                            handleAttach(id, stream);
-
                         };
 
-                        if (id == socketListId) { // so that new user do not send intial stream to the old user because that will ultimately happen after this
-                            // New user just creates the offer , streams and send it to the old user 
-                            // Old user in return just added their stream to new user as initial setup so that connection can be estabished 
-                            // And in this case Old user don't have to create any offer because that is being done from new user
-                            // Once connection is estabilished then which ever client has to send stream then it only negotiates with new stream and offer rest clients will just answer their offer.
-                            if (window.localStream !== undefined && window.localStream !== null) {
-                                window.localStream.getTracks().forEach(track => {
-                                    connections[socketListId].addTrack(track, window.localStream);
-                                });
-                            }
-                            else {
-                                let blackSilence = (...args) => new MediaStream([black(...args), silence()]) // It will silent media stream because in intial setup if no stream then still we have to add it
-                                window.localStream = blackSilence()
-                                window.localStream.getTracks().forEach(track => {
-                                    connections[socketListId].addTrack(track, window.localStream);
-                                });
-                            }
+                        // Handle the first track, and any replaced ones
+                        event.track.onunmute = () => {
+                            handleTrack();
+                        };
+
+                        event.track.onmute = () => {
+                            handleTrack();
                         }
-                    })
+                    };
 
-                    // Signaling(Our own nodejs server it is just a message exchange part) is the process of exchanging metadata between two peers so they can establish a peer-to-peer connection.
-                    // It includes the exchange of:
-                    // SDP (Session Description Protocol) — describes media capabilities
-                    // ICE candidates — describes how to reach each other (IP, port, protocols)
-
-                    if (id === socketIdRef.current) {
-                        for (let id2 in connections) {
-                            if (id2 === socketIdRef.current) continue
-
-                            try {
-                                window.localStream.getTracks().forEach(track => {
-                                    connections[id2].addTrack(track, window.localStream);
-                                });
-                            } catch (e) { }
-                            console.log("Just before offer")
-
-                            connections[id2].createOffer().then((description) => {
-                                connections[id2].setLocalDescription(description)
-                                    .then(() => {
-                                        socketRef.current.emit('signal', id2, JSON.stringify({ 'sdp': connections[id2].localDescription }))
-                                    })
-                                    .catch(e => console.log(e))
-                            }).catch((e) => console.log(e));
+                    if (id == socketListId) { // so that new user do not send intial stream to the old user because that will ultimately happen after this
+                        // New user just creates the offer , streams and send it to the old user 
+                        // Old user in return just added their stream to new user as initial setup so that connection can be estabished 
+                        // And in this case Old user don't have to create any offer because that is being done from old user
+                        // Once connection is estabilished then which ever client has to send stream then it only negotiates with new stream and offer rest clients will just answer their offer.
+                        if (window.localStream !== undefined && window.localStream !== null) {
+                            window.localStream.getTracks().forEach(track => {
+                                connections[socketListId].addTrack(track, window.localStream);
+                            });
+                        }
+                        else {
+                            let blackSilence = (...args) => new MediaStream([black(...args), silence()]) // It will silent media stream because in intial setup if no stream then still we have to add it
+                            window.localStream = blackSilence()
+                            window.localStream.getTracks().forEach(track => {
+                                connections[socketListId].addTrack(track, window.localStream);
+                            });
                         }
                     }
                 })
+
+                // Signaling(Our own nodejs server it is just a message exchange part) is the process of exchanging metadata between two peers so they can establish a peer-to-peer connection.
+                // It includes the exchange of:
+                // SDP (Session Description Protocol) — describes media capabilities
+                // ICE candidates — describes how to reach each other (IP, port, protocols)
+                if (id === socketIdRef.current) {
+                    for (let id2 in connections) {
+                        if (id2 === socketIdRef.current) continue
+
+                        try {
+                            window.localStream.getTracks().forEach(track => {
+                                connections[id2].addTrack(track, window.localStream);
+                            });
+                        } catch (e) { }
+
+                        connections[id2].createOffer().then((description) => {
+                            connections[id2].setLocalDescription(description)
+                                .then(() => {
+                                    socketRef.current.emit('signal', id2, JSON.stringify({ 'sdp': connections[id2].localDescription }))
+                                })
+                                .catch(e => console.log(e))
+                        }).catch((e) => console.log(e));
+                    }
+                }
             })
-        }
-        catch (e) {
-
-        }
-
+        })
     }
 
     let silence = () => {
@@ -528,7 +410,6 @@ export default function VideoMeetComponent() {
         ctx.resume()
         return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false })
     }
-    
     let black = ({ width = 640, height = 480 } = {}) => {
         let canvas = Object.assign(document.createElement("canvas"), { width, height })
         canvas.getContext('2d').fillRect(0, 0, width, height)
@@ -538,18 +419,13 @@ export default function VideoMeetComponent() {
 
     let handleVideo = () => {
         if (videoAvailable == true) {
-            if (screenRef.current) {
-                // That means screen sharing is going on to screen sharing off karke hi karo
-                toast.error("Please first off the screen sharing")
-            }
-            else setVideo(!video);
+            setVideo(!video);
         }
         else toast.error("You can not turn on video because you have blocked the access");
     }
 
     let handleAudio = () => {
         if (audioAvailable == true) {
-
             setAudio(!audio);
         }
         else toast.error("You can not turn on audio because you have blocked the access");
@@ -577,23 +453,21 @@ export default function VideoMeetComponent() {
         for (let id in connections) {
             if (id === socketIdRef.current) continue
 
-            let pc = connections[id];
-            let sender = pc.getSenders().find((s) => s.track && s.track.kind == "video");
-            let videoTrack = stream.getVideoTracks()[0];
+            window.localStream.getTracks().forEach(track => {
+                connections[id].addTrack(track, window.localStream);
+            });
 
-            if (!sender) {
-                console.log("Don't have video track")
-            }
-            else {
-                console.log("Track Display Replaced", videoTrack);
-                sender.replaceTrack(videoTrack)
-                socketRef.current.emit("force-update", id);
-            }
+            connections[id].createOffer().then((description) => {
+                connections[id].setLocalDescription(description)
+                    .then(() => {
+                        socketRef.current.emit('signal', id, JSON.stringify({ 'sdp': connections[id].localDescription }))
+                    })
+                    .catch(e => console.log(e))
+            }).catch((e) => console.log(e));
         }
 
         stream.getTracks().forEach(track => track.onended = () => { // it is checking if any track is ended if yes means user ne screen share band kar diya hai 
-            screenRef.current = false;
-            setScreen(false);
+            setScreen(false)
 
             try {
                 let tracks = localVideoref.current.srcObject.getTracks()
@@ -611,7 +485,6 @@ export default function VideoMeetComponent() {
                 navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }) // video means you are sharing your screen and audio means your systam audio inka eak stream
                     .then(getDisplayMediaSucess)
                     .catch(() => { // when user ne kon si screen shose karni hai uss prompt ko nhi diya then yeh .catch chalega
-                        screenRef.current = false;
                         setScreen(false);
                     })
             }
@@ -622,36 +495,20 @@ export default function VideoMeetComponent() {
     }
 
     useEffect(() => {
-        if (screenRef.current == true) {
+        if (screen != undefined) {
             getDisplayMedia();
         }
-
     }, [screen])
 
     let handleScreen = () => {
-        console.log("I am in handle screen " + screenRef.current)
         if (screenAvailable == false) {
             toast.error("Your device can not share the screen");
-            return;
         }
 
-        if (screenRef.current == true) { // that means screen sharing off karna hai to jo niche likha aata hai wahi se karo kyuki usse function trigger hoga jo ultimately screen ko false kar hi dega
-            return;
-        }
-
-        if (video == false) { // now it is gurantted that before screen sharing video always rhega
-            toast.error("Please turn on your video for screen sharing");
-            return;
-        }
-
-        if (screenRef.current == undefined) {
-            screenRef.current = true;
+        if (screenAvailable == undefined) {
             setScreen(true);
         }
-        else {
-            screenRef.current = !screenRef.current;
-            setScreen(!screen);
-        }
+        else setScreen(!screen);
     }
 
     let sendMessage = () => {
@@ -670,29 +527,23 @@ export default function VideoMeetComponent() {
     }
 
     useEffect(() => {
-        const handleBeforeUnload = () => {
+        return () => {
+
             // This is a cleanup function and iske trigger hote hi we have to do all things to remove curr person from the meeting
+            socketRef.current.emit("user-left");
 
             // Close all peer connections
             for (let id in connections) {
-                if (connections[id]) {
-                    connections[id].close();
-                    delete connections[id];
-                }
+                connections[id].close();
             }
 
             // Stop all media 
             if (window.localStream) {
                 window.localStream.getTracks().forEach((track) => track.stop());
             }
-        };
 
-        window.addEventListener("beforeunload", handleBeforeUnload);
-
-        return () => {
-            window.removeEventListener("beforeunload", handleBeforeUnload);
-        };
-    }, []);
+        }
+    }, [])
 
     let endCall = () => {
         navigate("/")
@@ -743,7 +594,7 @@ export default function VideoMeetComponent() {
 
                         {screenAvailable === true ?
                             <IconButton style={{ color: "white" }}>
-                                {screenRef.current === true ? <ScreenShareIcon onClick={handleScreen} /> : <StopScreenShareIcon onClick={handleScreen} />}
+                                {screen === true ? <ScreenShareIcon onClick={handleScreen} /> : <StopScreenShareIcon onClick={handleScreen} />}
                             </IconButton> : <></>}
 
                         <Badge badgeContent={newMessages} max={999} color='secondary'>
