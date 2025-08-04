@@ -88,6 +88,7 @@ export default function VideoMeetComponent() {
                 if (audioAvailable) {
                     const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     tracks.push(...audioStream.getAudioTracks());
+                    window.localAudioStream = audioStream;
                 }
             }
             catch (err) {
@@ -220,10 +221,11 @@ export default function VideoMeetComponent() {
 
             // AUDIO TRACK HANDLING (optional)
 
-            let sender = pc.getSenders().find(s => s.track && s.track?.kind == "audio");
-
-            if(sender?.track){
-                sender.track.enabled = (audio) ? true : false; // .enabled se track to rehta hai but usme flow hoga ya nhi woh control kiya jaa sakta hai
+            if (window.localAudioStream) {
+                const audioTrack = window.localAudioStream.getAudioTracks()[0];
+                if (audioTrack) {
+                    audioTrack.enabled = audio ? true : false;
+                }
             }
         }
     };
