@@ -2,13 +2,34 @@ import { Server } from "socket.io";
 
 let connections = {}
 let messages = {}
-let timeOnline = {}
+
+function handleUserLeaving(socket , io) {
+    let matchingRoom = '';
+    for (const [roomKey, roomValue] of Object.entries(connections)) {
+        if (roomValue.includes(socket.id)) {
+            matchingRoom = roomKey;
+            break;
+        }
+    }
+
+    if (matchingRoom) {
+        connections[matchingRoom] = connections[matchingRoom].filter(elm => elm !== socket.id);
+        connections[matchingRoom].forEach(elm => {
+            io.to(elm).emit("user-left", socket.id);
+        });
+
+        if (connections[matchingRoom].length === 0) {
+            delete connections[matchingRoom];
+            delete messages[matchingRoom];
+        }
+    }
+}
 
 export default function connectToSocket(server) {
     const io = new Server(server, {
         cors: {
-            // origin: "http://localhost:5173",
-            origin : "https://zoom-clone-frontend-bupu.onrender.com",
+            origin: "http://localhost:5173",
+            // origin : "https://zoom-clone-frontend-bupu.onrender.com",
             credentials: true
         }
     });
@@ -19,8 +40,6 @@ export default function connectToSocket(server) {
         socket.on("join-call", (path) => {
             if (connections[path] == undefined) connections[path] = [];
             connections[path].push(socket.id);
-
-            timeOnline[socket.id] = new Date();
 
             connections[path].forEach(elm => {
                 io.to(elm).emit("user-joined", socket.id, connections[path]);
@@ -70,34 +89,17 @@ export default function connectToSocket(server) {
 
         })
 
-        // Triggered automatically when a client loses connection, closes the tab, or refreshes.
-        // You don’t need to emit it manually — Socket.IO handles it for you.
+        socket.on("manual-disconnect", () => {
+            handleUserLeaving(socket , io); 
+        });
+
+        // This is a built in handler which automatically runs when user leaves / refreshes the page but can't relay only on this because it is slow can take seconds.
         socket.on("disconnect", () => {
-            let matchingRoom = '';
-            let found = false;
-            for (const [roomKey, roomValue] of Object.entries(connections)) {
-                if (roomValue.includes(socket.id)) {
-                    matchingRoom = roomKey;
-                    found = true;
-                    break;
-                }
-            }
-
-            if (found) {
-                connections[matchingRoom] = connections[matchingRoom].filter(elm => elm !== socket.id);
-                connections[matchingRoom].forEach(elm => {
-                    io.to(elm).emit("user-left", socket.id);
-                })
-
-                if (connections[matchingRoom].length === 0) {
-                    delete connections[matchingRoom];
-                    delete messages[matchingRoom];
-                }
-            }
-        })
+            handleUserLeaving(socket , io); // Fallback in case manual-disconnect doesn't fire
+        });
 
         socket.on("force-update", (to) => {
-            socket.to(to).emit("force-update" , socket.id);
+            socket.to(to).emit("force-update", socket.id);
         })
 
 

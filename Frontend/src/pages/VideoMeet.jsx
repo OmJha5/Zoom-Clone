@@ -25,12 +25,11 @@ var connections = {};
 
 const peerConfigConnections = {
     iceServers: [
-        { urls: "stun:stun.l.google.com:19302" }
+        { urls: "stun:stun.l.google.com:19302" } // we are using google turn servers for NAT traversal
     ]
 }
 
 export default function VideoMeetComponent() {
-    let dispatch = useDispatch();
     let navigate = useNavigate();
     let user_id = useSelector((state) => state.auth.id);
 
@@ -176,10 +175,7 @@ export default function VideoMeetComponent() {
 
     let getUserMediaSuccess = (stream) => {
 
-        console.log("getUserMediaSuccess is called", video, audio);
-        console.log("getUserMediaSuccess called, connections:", Object.keys(connections));
-
-        if (screenRef.current != true) {
+        if (screenRef.current != true) { // why we wrote this if and below if ? -- because jab screen sharing chalu hai then if user toggles audio (not video because screen sharing mai video nhi hogi chalu coding) then direct yahi function execute hoga and agar hum tracks stop kardenge localStream ke ya replaceTrack use kardenge to woh screensharing track ko video Track mai replace kardega and that will break the code
             try {
                 if (window.localStream) {
                     window.localStream.getTracks().forEach(track => track.stop());
@@ -196,33 +192,26 @@ export default function VideoMeetComponent() {
         for (let id in connections) {
             if (id === socketIdRef.current) continue;
 
-            const pc = connections[id];
-            console.log(stream.getAudioTracks());
-            console.log(stream.getVideoTracks());
+            const pc = connections[id]; // peerconnection
             const videoTrack = stream.getVideoTracks().length > 0 ? stream.getVideoTracks()[0] : undefined;
-            const audioTrack = stream.getAudioTracks().length > 0 ? stream.getAudioTracks()[0] : undefined;
-
-            const senders = pc.getSenders();
+            const senders = pc.getSenders(); // getSenders() because for this client we are sending our tracks to conenctions[id] and connections[id] they will use getReceivers() to get all tracks from us.
 
             // VIDEO TRACK HANDLING
-            const videoSender = senders.find(s => s.track?.kind === 'video');
-            // console.log(video , videoSender , videoTrack)
-            if (screenRef.current != true) {
+            const videoSender = senders.find(s => s.track?.kind === 'video'); // ? because tracks can be null when we are turning off the screen sharing.
+
+            if (screenRef.current != true) { // why if because of above reason .
                 if (video && videoTrack) {
-                    if (videoSender) {
-                        console.log("1");
+                    if (videoSender) { // This if will run when we are just entering the room with camera on
                         videoSender.replaceTrack(videoTrack);
                         socketRef.current.emit("force-update", id);
                     }
-                    else {
-                        console.log("2");
+                    else { // This will run when we are turning on our camera and in this process we don't have any video track (only null track when we turn off the video) so we have to add it and negotiate
                         pc.addTrack(videoTrack, stream);
                         renegotiate(pc, id);
                     }
                 }
                 else {
-                    if (videoSender) {
-                        console.log("3");
+                    if (videoSender) { // When we will turn off the camera
                         videoSender.replaceTrack(null);
                         socketRef.current.emit("force-update", id);
                     }
@@ -233,27 +222,7 @@ export default function VideoMeetComponent() {
 
             let sender = pc.getSenders().find(s => s.track && s.track.kind == "audio");
 
-            sender.enabled = (audio) ? false : true;
-            // if (audio && audioTrack) {
-            //     if (audioSender) {
-            //         audioSender.replaceTrack(audioTrack);
-            //         socketRef.current.emit("force-update", id);
-            //         console.log("4");
-            //     }
-            //     else {
-            //         console.log("5");
-            //         pc.addTrack(audioTrack, stream);
-            //         if (videoTrack != undefined) pc.addTrack(videoTrack, stream);
-            //         renegotiate(pc, id);
-            //     }
-            // }
-            // else {
-            //     if (audioSender) {
-            //         console.log("6");
-            //         audioSender.replaceTrack(null);
-            //         socketRef.current.emit("force-update", id);
-            //     }
-            // }
+            sender.track.enabled = (audio) ? true : false; // .enabled se track to rehta hai but usme flow hoga ya nhi woh control kiya jaa sakta hai
         }
     };
 
@@ -266,8 +235,6 @@ export default function VideoMeetComponent() {
             .catch(console.log);
     }
 
-
-
     let getUserMedia = () => {
         if (video || audio) {
             // when .then and catch will run ?
@@ -279,7 +246,7 @@ export default function VideoMeetComponent() {
 
                 try {
                     if (audio) {
-                        const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        const audioStream = await navigator.mediaDevices.getUserMedia({ audio: audio });
                         tracks.push(...audioStream.getAudioTracks());
                     }
                 }
@@ -289,7 +256,7 @@ export default function VideoMeetComponent() {
 
                 try {
                     if (video) {
-                        const videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        const videoStream = await navigator.mediaDevices.getUserMedia({ video: video });
                         tracks.push(...videoStream.getVideoTracks());
                     }
                 }
@@ -351,24 +318,22 @@ export default function VideoMeetComponent() {
     let handleAttach = async (socketListId, stream) => {
         if (!stream || !stream.getTracks().length) return;
 
-        // Prevent attaching your own stream (assuming already handled in local UI)
+        // Prevent attaching your own stream
         if (socketListId === socketIdRef.current) return;
 
         setVideos((videos) => {
             const videoExists = videos.find(video => video.socketId === socketListId);
-
-            // Optional: prevent same stream ID being added twice (for some race cases)
-            const duplicateStream = videos.find(video => video.stream?.id === stream.id);
-            if (duplicateStream) return videos;
 
             if (videoExists) {
                 // Update stream
                 const updated = videos.map(video =>
                     video.socketId === socketListId ? { ...video, stream } : video
                 );
+
                 videoRef.current = updated;
                 return updated;
-            } else {
+            }
+            else {
                 // Add new stream
                 const newVideo = {
                     socketId: socketListId,
@@ -386,14 +351,12 @@ export default function VideoMeetComponent() {
 
 
     let connectToSocketServer = () => {
-        console.log("Before io.connect")
+
         socketRef.current = io.connect(server_url, { secure: false })
 
-        socketRef.current.on('signal', gotMessageFromServer)
-
-        console.log("Before on connect")
         socketRef.current.on('connect', () => {
-            console.log("After on connect")
+
+            socketRef.current.on('signal', gotMessageFromServer)
             socketRef.current.emit('join-call', window.location.href)
             socketIdRef.current = socketRef.current.id
 
@@ -404,12 +367,11 @@ export default function VideoMeetComponent() {
             })
 
             socketRef.current.on("force-update", (fromId) => {
-                console.log("Emit came to me with fromId:", fromId);
 
                 const pc = connections[fromId];
                 if (!pc) return;
 
-                const receivers = pc.getReceivers();
+                const receivers = pc.getReceivers(); // Because yeh fromId se uske streams lega aur apne videos array ko update karega . That is why yeh uske liye receiver hai . each pc has getSenders() and getReceivers()
                 let videoTrack = null;
                 let audioTrack = null;
 
@@ -419,7 +381,6 @@ export default function VideoMeetComponent() {
                         continue;
                     }
 
-                    console.log("Receiver track kind:", receiver.track.kind);
                     if (receiver.track.kind === "video") {
                         videoTrack = receiver.track;
                     }
@@ -427,10 +388,6 @@ export default function VideoMeetComponent() {
                         audioTrack = receiver.track;
                     }
                 }
-
-                console.log("HURRA");
-                console.log("videoTrack:", videoTrack);
-                console.log("audioTrack:", audioTrack);
 
                 const tracks = [];
                 if (videoTrack) tracks.push(videoTrack);
@@ -443,19 +400,15 @@ export default function VideoMeetComponent() {
 
             socketRef.current.on('user-joined', (id, clients) => {
 
-                clients.forEach((socketListId) => {
+                clients.forEach((socketListId) => { // eg [A , [A , B , C]]
 
-                    if (socketIdRef.current == socketListId) return;
-                    console.log(socketListId)
-
+                    if (socketIdRef.current == socketListId) return; // Curr client khud se thodi connection banayega
                     if (connections[socketListId]) return; // if yes then current browser client already has connection with this socket if yes then agar handshake hogaya hai to phir se kyu karen that is the concept. they are already in a single room
-
-
 
                     // Create a WebRTC connection with settings in peerConfigConnections and store it using the other user’s ID.”
                     connections[socketListId] = new RTCPeerConnection(peerConfigConnections)
 
-                    // onicecandidate is a handler so      
+                    // onicecandidate is a handler that will start ICE Gathering jab for this client connections[socketListId].localDescription() chal jaata hai   
                     connections[socketListId].onicecandidate = function (event) {
                         if (event.candidate != null) {
                             socketRef.current.emit('signal', socketListId, JSON.stringify({ 'ice': event.candidate }))
@@ -464,33 +417,24 @@ export default function VideoMeetComponent() {
 
                     // Wait for their video stream
                     connections[socketListId].ontrack = (event) => {
-                        console.log("Came with new Stream");
                         const [stream] = event.streams;
 
                         handleAttach(socketListId, stream);
 
                     };
 
-                    if (socketIdRef.current !== id) {
-                        if (window.localStream && window.localStream.getTracks().length > 0) {
-                            window.localStream.getTracks().forEach(track => {
-                                connections[socketListId].addTrack(track, window.localStream);
-                            });
-                        }
-                    }
-
                     if (id == socketListId) { // so that new user do not send intial stream to the old user because that will ultimately happen after this
                         // New user just creates the offer , streams and send it to the old user 
                         // Old user in return just added their stream to new user as initial setup so that connection can be estabished 
                         // And in this case Old user don't have to create any offer because that is being done from new user
-                        // Once connection is estabilished then which ever client has to send stream then it only negotiates with new stream and offer rest clients will just answer their offer.
+                        // Once connection is estabilished then which ever client has to send stream then it can send and other will receive it.
                         if (window.localStream !== undefined && window.localStream !== null) {
                             window.localStream.getTracks().forEach(track => {
                                 connections[socketListId].addTrack(track, window.localStream);
                             });
                         }
                         else {
-                            let blackSilence = (...args) => new MediaStream([black(...args), silence()]) // It will silent media stream because in intial setup if no stream then still we have to add it
+                            let blackSilence = (...args) => new MediaStream([black(...args), silence()]) // It is silent media stream because in intial setup if no stream then still we have to add it
                             window.localStream = blackSilence()
                             window.localStream.getTracks().forEach(track => {
                                 connections[socketListId].addTrack(track, window.localStream);
@@ -513,7 +457,6 @@ export default function VideoMeetComponent() {
                                 connections[id2].addTrack(track, window.localStream);
                             });
                         } catch (e) { }
-                        console.log("Just before offer")
 
                         connections[id2].createOffer().then((description) => {
                             connections[id2].setLocalDescription(description)
@@ -570,10 +513,6 @@ export default function VideoMeetComponent() {
         updateMeetingsForCurrUser();
     }
 
-    /*
-    "In WebRTC, once users are connected, their video or audio flows live without needing to send anything again. If the user’s stream stays the same — like just changing the webcam content — it keeps working.
-    But if the user adds a new stream (like screen sharing) or removes one, we need to inform the other person by creating a new offer. That’s called renegotiation."
-    */
     let getDisplayMediaSucess = async (stream) => {
         try {
             window.localStream.getTracks().forEach(track => track.stop())
@@ -594,13 +533,12 @@ export default function VideoMeetComponent() {
                 console.log("Don't have video track")
             }
             else {
-                console.log("Track Display Replaced", videoTrack);
                 sender.replaceTrack(videoTrack)
                 socketRef.current.emit("force-update", id);
             }
         }
 
-        stream.getTracks().forEach(track => track.onended = () => { // it is checking if any track is ended if yes means user ne screen share band kar diya hai 
+        stream.getTracks().forEach(track => track.onended = () => { // it is checking if any screen sharing track is ended if yes means user ne screen share band kar diya hai 
             screenRef.current = false;
             setScreen(false);
 
@@ -617,9 +555,10 @@ export default function VideoMeetComponent() {
     let getDisplayMedia = async () => {
         try {
             if (screen) {
+                // navigator.mediaDevices.getDisplayMedia() -- It is an API for Screen sharing
                 navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }) // video means you are sharing your screen and audio means your systam audio inka eak stream
                     .then(getDisplayMediaSucess)
-                    .catch(() => { // when user ne kon si screen shose karni hai uss prompt ko nhi diya then yeh .catch chalega
+                    .catch(() => { // when user ne kon kon si screen choose karni hai uss prompt ko nhi diya then yeh .catch chalega
                         screenRef.current = false;
                         setScreen(false);
                     })
@@ -638,7 +577,6 @@ export default function VideoMeetComponent() {
     }, [screen])
 
     let handleScreen = () => {
-        console.log("I am in handle screen " + screenRef.current)
         if (screenAvailable == false) {
             toast.error("Your device can not share the screen");
             return;
@@ -648,7 +586,7 @@ export default function VideoMeetComponent() {
             return;
         }
 
-        if (video == false) { // now it is gurantted that before screen sharing video always rhega
+        if (video == false) { // now it is gurantted that before screen sharing video always on rhega
             toast.error("Please turn on your video for screen sharing");
             return;
         }
@@ -678,22 +616,28 @@ export default function VideoMeetComponent() {
         }
     }
 
+    let cleanupConnections = () => {
+        if (socketRef.current) {
+            socketRef.current.emit("manual-disconnect");
+        }
+
+        // Clean up peer connections
+        for (let id in connections) {
+            if (connections[id]) {
+                connections[id].close();
+                delete connections[id];
+            }
+        }
+
+        // Stop media tracks
+        if (window.localStream) {
+            window.localStream.getTracks().forEach((track) => track.stop());
+        }
+    }
+
     useEffect(() => {
         const handleBeforeUnload = () => {
-            // This is a cleanup function and iske trigger hote hi we have to do all things to remove curr person from the meeting
-
-            // Close all peer connections
-            for (let id in connections) {
-                if (connections[id]) {
-                    connections[id].close();
-                    delete connections[id];
-                }
-            }
-
-            // Stop all media 
-            if (window.localStream) {
-                window.localStream.getTracks().forEach((track) => track.stop());
-            }
+            cleanupConnections();
         };
 
         window.addEventListener("beforeunload", handleBeforeUnload);
@@ -704,6 +648,7 @@ export default function VideoMeetComponent() {
     }, []);
 
     let endCall = () => {
+        cleanupConnections();
         navigate("/")
     }
 
@@ -763,7 +708,7 @@ export default function VideoMeetComponent() {
                     </div>
 
 
-                    <video className="meetUserVideo" ref={localVideoref} autoPlay></video>
+                    <video className="meetUserVideo" ref={localVideoref} autoPlay muted></video>
 
                     <div className="videoDiv">
                         {videos.map((video, ind) => (
@@ -776,7 +721,6 @@ export default function VideoMeetComponent() {
                                         }
                                     }}
 
-                                    muted
                                     autoPlay
                                 >
                                 </video>
