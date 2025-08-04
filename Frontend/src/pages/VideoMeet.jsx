@@ -220,9 +220,11 @@ export default function VideoMeetComponent() {
 
             // AUDIO TRACK HANDLING (optional)
 
-            let sender = pc.getSenders().find(s => s.track && s.track.kind == "audio");
+            let sender = pc.getSenders().find(s => s.track && s.track?.kind == "audio");
 
-            sender.track.enabled = (audio) ? true : false; // .enabled se track to rehta hai but usme flow hoga ya nhi woh control kiya jaa sakta hai
+            if(sender?.track){
+                sender.track.enabled = (audio) ? true : false; // .enabled se track to rehta hai but usme flow hoga ya nhi woh control kiya jaa sakta hai
+            }
         }
     };
 
