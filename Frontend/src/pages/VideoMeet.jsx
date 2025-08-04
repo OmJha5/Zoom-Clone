@@ -673,11 +673,6 @@ export default function VideoMeetComponent() {
                     </div>
 
 
-                    {/* Case	                  Can you hear your own voice?	          Can others hear your voice?
-                        muted is present	      ❌ No	                                ✅ Yes
-                        muted is not present	  ✅ Yes (you hear your surroundings)	✅ Yes */}
-
-
                 </div> :
 
 
@@ -708,7 +703,7 @@ export default function VideoMeetComponent() {
                     </div>
 
 
-                    <video className="meetUserVideo" ref={localVideoref} autoPlay muted></video>
+                    <video className="meetUserVideo" ref={localVideoref} autoPlay muted={true}></video>
 
                     <div className="videoDiv">
                         {videos.map((video, ind) => (
@@ -722,6 +717,7 @@ export default function VideoMeetComponent() {
                                     }}
 
                                     autoPlay
+                                    muted={false}
                                 >
                                 </video>
                             </div>
