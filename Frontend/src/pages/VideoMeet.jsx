@@ -173,6 +173,7 @@ export default function VideoMeetComponent() {
     }
 
     let getUserMediaSuccess = (stream) => {
+        console.log("Inside getUserMediasuccess")
 
         if (screenRef.current != true) { // why we wrote this if and below if ? -- because jab screen sharing chalu hai then if user toggles audio (not video because screen sharing mai video nhi hogi chalu coding) then direct yahi function execute hoga and agar hum tracks stop kardenge localStream ke ya replaceTrack use kardenge to woh screensharing track ko video Track mai replace kardega and that will break the code
             try {
@@ -219,6 +220,7 @@ export default function VideoMeetComponent() {
                 }
             }
 
+            console.log(video , videoTrack , videoSender);
             if (screenRef.current != true) { // why if because of above reason .
                 if (video && videoTrack) {
                     if (videoSender) { // This if will run when we are just entering the room with camera on
@@ -232,7 +234,6 @@ export default function VideoMeetComponent() {
                 else {
                     if (videoSender) { // When we will turn off the camera
                         videoSender.replaceTrack(null);
-                        videoSender.track?.stop();
                     }
                 }
             }
@@ -245,6 +246,7 @@ export default function VideoMeetComponent() {
                 if (isNegotiate) {
                     renegotiate(pc, id).then(() => {
                         setTimeout(() => {
+                            console.log("Emitting the force-update")
                             socketRef.current.emit("force-update", id);
                         }, 100)
                     })
@@ -396,7 +398,7 @@ export default function VideoMeetComponent() {
             })
 
             socketRef.current.on("force-update", (fromId) => {
-
+                console.log("Inside force-update function ")
                 const pc = connections[fromId];
                 if (!pc) return;
 
