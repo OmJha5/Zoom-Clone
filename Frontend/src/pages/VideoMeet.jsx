@@ -172,6 +172,23 @@ export default function VideoMeetComponent() {
         connectToSocketServer();
     }
 
+    function createBlankVideoTrack(width = 640, height = 480) {
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, width, height);
+
+        // Update every 200ms to keep stream "live"
+        setInterval(() => {
+            ctx.fillRect(0, 0, width, height);
+        }, 200);
+
+        return canvas.captureStream(5).getVideoTracks()[0]; // 5 FPS is fine
+    }
+
 
     let getUserMediaSuccess = (stream) => {
 
@@ -200,7 +217,7 @@ export default function VideoMeetComponent() {
 
             const videoSender = senders.find(s => s.track?.kind === 'video'); // ? because tracks can be null when we are turning off the screen sharing.
             const audioSender = senders.find(s => s.track?.kind == "audio");
-            
+
             let isNegotiate = false;
 
             if (audio) {
@@ -208,7 +225,7 @@ export default function VideoMeetComponent() {
                     // audio track to jaoor hoga because audio on hai
                     audioSender.replaceTrack(audioTrack);
                 }
-                else{
+                else {
                     // assume when user 1 came and turn off the audio that means uske mai audio tracks nhi honge to jab naya user aayaega to yeh sabko yahi batayega mere pe audio tracks nhi hai to jab woh on karega so we have to add new audio tracks with enabled : true value otherwise bakkiyo ko to mute awaj hi aayegi
                     pc.addTrack(audioTrack);
                     isNegotiate = true;
@@ -232,8 +249,7 @@ export default function VideoMeetComponent() {
                 }
                 else {
                     if (videoSender) { // When we will turn off the camera
-                        pc.removeTrack(videoSender);
-                        isNegotiate = true;
+                        videoSender.replaceTrack(createBlankVideoTrack());
                     }
                 }
             }
@@ -247,7 +263,7 @@ export default function VideoMeetComponent() {
                     renegotiate(pc, id).then(() => {
                         setTimeout(() => {
                             socketRef.current.emit("force-update", id);
-                        } , 100)
+                        }, 100)
                     })
                 }
                 else {
