@@ -173,8 +173,6 @@ export default function VideoMeetComponent() {
     }
 
     let getUserMediaSuccess = (stream) => {
-        console.log("Inside getUserMediasuccess")
-
         if (screenRef.current != true) { // why we wrote this if and below if ? -- because jab screen sharing chalu hai then if user toggles audio (not video because screen sharing mai video nhi hogi chalu coding) then direct yahi function execute hoga and agar hum tracks stop kardenge localStream ke ya replaceTrack use kardenge to woh screensharing track ko video Track mai replace kardega and that will break the code
             try {
                 if (window.localStream) {
@@ -210,7 +208,7 @@ export default function VideoMeetComponent() {
                 }
                 else {
                     // assume when user 1 came and turn off the audio that means uske mai audio tracks nhi honge to jab naya user aayaega to yeh sabko yahi batayega mere pe audio tracks nhi hai to jab woh on karega so we have to add new audio tracks with enabled : true value otherwise bakkiyo ko to mute awaj hi aayegi
-                    pc.addTrack(audioTrack);
+                    pc.addTrack(audioTrack, stream);
                     isNegotiate = true;
                 }
             }
@@ -220,13 +218,12 @@ export default function VideoMeetComponent() {
                 }
             }
 
-            console.log(video , videoTrack , videoSender);
             if (screenRef.current != true) { // why if because of above reason .
-                if (video && videoTrack) {
-                    if (videoSender) { // This if will run when we are just entering the room with camera on
+                if (video) {
+                    if (videoSender) { // When we on the camera
                         videoSender.replaceTrack(videoTrack);
                     }
-                    else { // This will run when we are turning on our camera and in this process we don't have any video track (only null track when we turn off the video) so we have to add it and negotiate
+                    else { // This is for same reason as i included in audio part.
                         pc.addTrack(videoTrack, stream);
                         isNegotiate = true;
                     }
@@ -245,10 +242,7 @@ export default function VideoMeetComponent() {
             else {
                 if (isNegotiate) {
                     renegotiate(pc, id).then(() => {
-                        setTimeout(() => {
-                            console.log("Emitting the force-update")
-                            socketRef.current.emit("force-update", id);
-                        }, 100)
+                        socketRef.current.emit("force-update", id);
                     })
                 }
                 else {
@@ -269,47 +263,39 @@ export default function VideoMeetComponent() {
     }
 
     let getUserMedia = () => {
-        if (video || audio) {
-            // when .then and catch will run ?
-            // jab browser ne jo video and audio ka access diya hai agar wahi yaha pe likha hai then woh stream ke sath .then chal jayega 
-            // eg agar browser ne video ka access nhi diya and audio diya hai and yaha pe video : true karke koshish karenge then .catch chal jayega
-            // and if browser ne access diya hua hai to either aap yeh true ke sath aao ya false doesn't matter 
-            async function getCombinedStream() {
-                const tracks = [];
+        // when .then and catch will run ?
+        // jab browser ne jo video and audio ka access diya hai agar wahi yaha pe likha hai then woh stream ke sath .then chal jayega 
+        // eg agar browser ne video ka access nhi diya and audio diya hai and yaha pe video : true karke koshish karenge then .catch chal jayega
+        // and if browser ne access diya hua hai to either aap yeh true ke sath aao ya false doesn't matter 
+        async function getCombinedStream() {
+            const tracks = [];
 
-                try {
-                    if (audio) {
-                        const audioStream = await navigator.mediaDevices.getUserMedia({ audio: audio });
-                        tracks.push(...audioStream.getAudioTracks());
-                    }
+            try {
+                if (audio) {
+                    const audioStream = await navigator.mediaDevices.getUserMedia({ audio: audio });
+                    tracks.push(...audioStream.getAudioTracks());
                 }
-                catch (err) {
-                    console.warn("Audio access failed:", err);
-                }
-
-                try {
-                    if (video) {
-                        const videoStream = await navigator.mediaDevices.getUserMedia({ video: video });
-                        tracks.push(...videoStream.getVideoTracks());
-                    }
-                }
-                catch (err) {
-                    console.warn("Video access failed:", err);
-                }
-
-                return new MediaStream(tracks);
+            }
+            catch (err) {
+                console.warn("Audio access failed:", err);
             }
 
-            getCombinedStream()
-                .then(getUserMediaSuccess)
-                .catch((e) => console.log(e));
-        }
-        else {
             try {
-                let tracks = localVideoref.current.srcObject.getTracks()
-                tracks.forEach(track => track.stop())
-            } catch (e) { }
+                if (video) {
+                    const videoStream = await navigator.mediaDevices.getUserMedia({ video: video });
+                    tracks.push(...videoStream.getVideoTracks());
+                }
+            }
+            catch (err) {
+                console.warn("Video access failed:", err);
+            }
+
+            return new MediaStream(tracks);
         }
+
+        getCombinedStream()
+            .then(getUserMediaSuccess)
+            .catch((e) => console.log(e));
     }
 
 
@@ -398,7 +384,6 @@ export default function VideoMeetComponent() {
             })
 
             socketRef.current.on("force-update", (fromId) => {
-                console.log("Inside force-update function ")
                 const pc = connections[fromId];
                 if (!pc) return;
 
@@ -407,10 +392,6 @@ export default function VideoMeetComponent() {
                 let audioTrack = null;
 
                 for (const receiver of receivers) {
-                    if (receiver.track == null) {
-                        console.log("Receiver with null track:", receiver);
-                        continue;
-                    }
 
                     if (receiver.track.kind === "video") {
                         videoTrack = receiver.track;
@@ -418,14 +399,7 @@ export default function VideoMeetComponent() {
                     else if (receiver.track.kind === "audio") {
                         audioTrack = receiver.track;
                     }
-
-                    receiver.track.onended = () => {
-                        console.log("Track is ended");
-                    }
                 }
-
-
-                console.log(videoTrack);
 
                 const tracks = [];
                 if (videoTrack) tracks.push(videoTrack);
