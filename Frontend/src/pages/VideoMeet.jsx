@@ -194,6 +194,16 @@ export default function VideoMeetComponent() {
             if (id === socketIdRef.current) continue;
 
             const pc = connections[id]; // peerconnection
+
+            // AUDIO TRACK HANDLING (optional)
+
+            if (window.localAudioStream) {
+                const audioTrack = window.localAudioStream.getAudioTracks()[0];
+                if (audioTrack) {
+                    audioTrack.enabled = audio ? true : false;
+                }
+            }
+
             const videoTrack = stream.getVideoTracks().length > 0 ? stream.getVideoTracks()[0] : undefined;
             const senders = pc.getSenders(); // getSenders() because for this client we are sending our tracks to conenctions[id] and connections[id] they will use getReceivers() to get all tracks from us.
 
@@ -219,14 +229,6 @@ export default function VideoMeetComponent() {
                 }
             }
 
-            // AUDIO TRACK HANDLING (optional)
-
-            if (window.localAudioStream) {
-                const audioTrack = window.localAudioStream.getAudioTracks()[0];
-                if (audioTrack) {
-                    audioTrack.enabled = audio ? true : false;
-                }
-            }
         }
     };
 
