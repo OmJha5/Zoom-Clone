@@ -245,7 +245,9 @@ export default function VideoMeetComponent() {
             else {
                 if (isNegotiate) {
                     renegotiate(pc, id).then(() => {
-                        socketRef.current.emit("force-update", id);
+                        setTimeout(() => {
+                            socketRef.current.emit("force-update", id);
+                        } , 100)
                     })
                 }
                 else {
