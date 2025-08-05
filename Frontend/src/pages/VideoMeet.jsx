@@ -172,24 +172,6 @@ export default function VideoMeetComponent() {
         connectToSocketServer();
     }
 
-    function createBlankVideoTrack(width = 640, height = 480) {
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext("2d");
-        ctx.fillStyle = "black";
-        ctx.fillRect(0, 0, width, height);
-
-        // Update every 200ms to keep stream "live"
-        setInterval(() => {
-            ctx.fillRect(0, 0, width, height);
-        }, 200);
-
-        return canvas.captureStream(5).getVideoTracks()[0]; // 5 FPS is fine
-    }
-
-
     let getUserMediaSuccess = (stream) => {
 
         if (screenRef.current != true) { // why we wrote this if and below if ? -- because jab screen sharing chalu hai then if user toggles audio (not video because screen sharing mai video nhi hogi chalu coding) then direct yahi function execute hoga and agar hum tracks stop kardenge localStream ke ya replaceTrack use kardenge to woh screensharing track ko video Track mai replace kardega and that will break the code
@@ -249,7 +231,8 @@ export default function VideoMeetComponent() {
                 }
                 else {
                     if (videoSender) { // When we will turn off the camera
-                        videoSender.replaceTrack(createBlankVideoTrack());
+                        videoSender.replaceTrack(null);
+                        videoSender.track?.stop();
                     }
                 }
             }
@@ -433,7 +416,14 @@ export default function VideoMeetComponent() {
                     else if (receiver.track.kind === "audio") {
                         audioTrack = receiver.track;
                     }
+
+                    receiver.track.onended(() => {
+                        console.log("Track is ended");
+                    })
                 }
+
+
+                console.log(videoTrack);
 
                 const tracks = [];
                 if (videoTrack) tracks.push(videoTrack);
