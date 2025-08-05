@@ -178,7 +178,7 @@ export default function VideoMeetComponent() {
         if (screenRef.current != true) { // why we wrote this if and below if ? -- because jab screen sharing chalu hai then if user toggles audio (not video because screen sharing mai video nhi hogi chalu coding) then direct yahi function execute hoga and agar hum tracks stop kardenge localStream ke ya replaceTrack use kardenge to woh screensharing track ko video Track mai replace kardega and that will break the code
             try {
                 if (window.localStream) {
-                    window.localStream.getTracks().forEach(track => track?.kind == "video" && track.stop());
+                    window.localStream.getTracks().forEach(track => track?.kind == "video" && track.stop()); // not audio because agar audio track stop hogaya to uss track pe .enabled true/false ka koi impact nhi hoga.
                 }
             }
             catch (e) {
@@ -194,33 +194,31 @@ export default function VideoMeetComponent() {
 
             const pc = connections[id]; // peerconnection
 
-            if (window.localAudioStream) {
-                const audioTrack = window.localAudioStream.getAudioTracks()[0];
-                if (audioTrack) {
-                    audioTrack.enabled = audio ? true : false;
-                }
-            }
-            
-
             const videoTrack = stream.getVideoTracks().length > 0 ? stream.getVideoTracks()[0] : undefined;
             const audioTrack = stream.getAudioTracks().length > 0 ? stream.getAudioTracks()[0] : undefined;
             const senders = pc.getSenders(); // getSenders() because for this client we are sending our tracks to conenctions[id] and connections[id] they will use getReceivers() to get all tracks from us.
 
             const videoSender = senders.find(s => s.track?.kind === 'video'); // ? because tracks can be null when we are turning off the screen sharing.
             const audioSender = senders.find(s => s.track?.kind == "audio");
+            
+            let isNegotiate = false;
 
-            if(audio){
-                if(audioSender && audioTrack){
+            if (audio) {
+                if (audioSender) {
+                    // audio track to jaoor hoga because audio on hai
                     audioSender.replaceTrack(audioTrack);
                 }
+                else{
+                    // assume when user 1 came and turn off the audio that means uske mai audio tracks nhi honge to jab naya user aayaega to yeh sabko yahi batayega mere pe audio tracks nhi hai to jab woh on karega so we have to add new audio tracks with enabled : true value otherwise bakkiyo ko to mute awaj hi aayegi
+                    pc.addTrack(audioTrack);
+                    isNegotiate = true;
+                }
             }
-            else{
-                if(audioSender) {
+            else {
+                if (audioSender) {
                     audioSender.track.enabled = false;
                 }
             }
-
-            let isNegotiate = false;
 
             if (screenRef.current != true) { // why if because of above reason .
                 if (video && videoTrack) {
@@ -234,22 +232,23 @@ export default function VideoMeetComponent() {
                 }
                 else {
                     if (videoSender) { // When we will turn off the camera
-                        videoSender.replaceTrack(null);
+                        pc.removeTrack(videoSender);
+                        isNegotiate = true;
                     }
                 }
             }
 
-            if(screenRef.current){
+            if (screenRef.current) {
                 // Force update only for Audio
                 socketRef.current.emit("force-update", id);
             }
-            else{
-                if(isNegotiate){
+            else {
+                if (isNegotiate) {
                     renegotiate(pc, id).then(() => {
                         socketRef.current.emit("force-update", id);
                     })
                 }
-                else{
+                else {
                     socketRef.current.emit("force-update", id);
                 }
             }
@@ -378,8 +377,6 @@ export default function VideoMeetComponent() {
             }
         });
     };
-
-
 
     let connectToSocketServer = () => {
 
