@@ -417,9 +417,9 @@ export default function VideoMeetComponent() {
                         audioTrack = receiver.track;
                     }
 
-                    receiver.track.onended(() => {
+                    receiver.track.onended = () => {
                         console.log("Track is ended");
-                    })
+                    }
                 }
 
 
