@@ -75,7 +75,7 @@ export default function History() {
                         <nav className="navbar">
                             <div className="navHeader">
                                 <h2>
-                                    <Link style={{ textDecoration: "none", color: "black" }} to={"/"}>Zoom Video Call</Link>
+                                    <Link style={{ textDecoration: "none", color: "black" }} to={"/"}>VibeCall</Link>
                                 </h2>
                             </div>
                             <div className="navList">
